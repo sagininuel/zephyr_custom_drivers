@@ -54,6 +54,6 @@ dkms.conf
 # debug information files
 *.dwo
 
-#custom
+#Do not include dir.
 /modules
 
