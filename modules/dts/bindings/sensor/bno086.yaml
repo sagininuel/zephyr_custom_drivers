@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Your Name
+# SPDX-License-Identifier: Apache-2.0
+
+description: Hillcrest/CEVA BNO086 9-axis IMU sensor
+
+compatible: "ceva,bno086"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RST pin of BNO086. This signal is active low.
+

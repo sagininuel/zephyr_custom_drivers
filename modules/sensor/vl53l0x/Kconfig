@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# In your Kconfig
+menuconfig CUSTOM_VL53L0X
+    bool "CUSTOM_VL53L0X sensor driver"
+    default y
+    depends on DT_HAS_CUSTOM_VL53L0X_ENABLED #compatible = "custom,vl53l0x"
+    help
+      Enable driver for CUSTOM_VL53L0X sensor
+
+# Add a debug option
+config CUSTOM_VL53L0X_DEBUG
+    bool "Debug CUSTOM_VL53L0X configuration"
+    default n
+    help
+      Debug message for CUSTOM_VL53L0X config

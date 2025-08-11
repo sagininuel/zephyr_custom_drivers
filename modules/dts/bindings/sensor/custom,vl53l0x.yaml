@@ -1,0 +1,6 @@
+description: VL53 Time-of-Flight sensor
+
+compatible: "custom,vl53l0x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+

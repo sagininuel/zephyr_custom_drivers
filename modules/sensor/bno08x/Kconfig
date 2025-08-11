@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CUSTOM_BNO08X
+	bool "CUSTOM_BNO08X IMU sensor driver"
+	default y
+	depends on DT_HAS_CUSTOM_BNO08X_ENABLED
+	select I2C
+	help
+	  Enable driver for Hillcrest CUSTOM_BNO08X IMU sensor with sensor fusion.
+
+
+config CUSTOM_BNO08X_LOG_LEVEL
+	int "CUSTOM_BNO08X Log level"
+	depends on LOG
+	depends on CUSTOM_BNO08x
+	default 3
+	range 0 4
+	help
+	  Sets log level for CUSTOM_BNO08X driver.
+	  0 = OFF, 1 = ERROR, 2 = WARNING, 3 = INFO, 4 = DEBUG
+
+config CUSTOM_BNO08X_TRIGGER
+	bool "CUSTOM_BNO08X interrupt support"
+	depends on GPIO
+	depends on BNO08x
+	help
+	  Enable interrupt support for CUSTOM_BNO08X sensor.
+
+
