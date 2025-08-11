@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Module-level configuration
+menuconfig CUSTOM_SENSORS
+    bool "Enable Custom Sensor Drivers"
+    help
+      Enable custom sensor drivers module
+
+if CUSTOM_SENSORS
+    rsource "sensor/bno08x/Kconfig"
+    rsource "sensor/vl53l0x/Kconfig"
+endif
+
