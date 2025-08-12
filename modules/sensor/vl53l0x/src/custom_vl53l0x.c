@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <drivers/custom_vl53l0x.h>
+#include <custom_vl53l0x.h>
 
 LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
 
