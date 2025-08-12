@@ -48,6 +48,10 @@
 	level, TRACE_FUNCTION_NONE, ##__VA_ARGS__)
 #endif
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(vl53l0x_api, LOG_LEVEL_DBG);
+
+
 /* Group PAL General Functions */
 
 VL53L0X_Error VL53L0X_GetVersion(VL53L0X_Version_t *pVersion)
@@ -387,7 +391,8 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	VL53L0X_DeviceParameters_t CurrentParameters;
 	int i;
 	uint8_t StopVariable;
-
+	
+	LOG_DBG("Inside Init");
 	LOG_FUNCTION_START("");
 
 	/* by default the I2C is running at 1V8 if you want to change it you
@@ -399,18 +404,22 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 		0xFE,
 		0x01);
 #endif
-
+	
+	LOG_DBG("First write ..");
 	/* Set I2C standard mode */
 	if (Status == VL53L0X_ERROR_NONE)
 		Status = VL53L0X_WrByte(Dev, 0x88, 0x00);
-
-	VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone, 0);
-
+	
+	LOG_DBG("First write complete ..");
+	LOG_DBG("Dev Is valid: %d", Dev->Data.DeviceSpecificParameters.ReadDataFromDeviceDone);
+	//VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone, 0);
+	//LOG_DBG("Dev Is valid: %d", VL53L0X_GETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone));
+	
 #ifdef USE_IQC_STATION
 	if (Status == VL53L0X_ERROR_NONE)
 		Status = VL53L0X_apply_offset_adjustment(Dev);
 #endif
-
+	LOG_DBG("Setting Values ..");
 	/* Default value is 1000 for Linearity Corrective Gain */
 	PALDevDataSet(Dev, LinearityCorrectiveGain, 1000);
 

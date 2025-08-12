@@ -9,17 +9,23 @@
 #include <zephyr/sys/byteorder.h>
 
 #include <custom_vl53l0x.h>
+#include <vl53l0x_api.h>
+#include <vl53l0x_platform.h>
 
 LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
 
+
 /* VL53L0X Register Addresses */
+/*
 #define VL53L0X_REG_SYSRANGE_START                  0x00
 #define VL53L0X_REG_SYSTEM_INTERRUPT_CONFIG_GPIO    0x0A
 #define VL53L0X_REG_SYSTEM_INTERRUPT_CLEAR          0x0B
-#define VL53L0X_REG_SYSTEM_FRESH_OUT_OF_RESET       0x016
 #define VL53L0X_REG_IDENTIFICATION_MODEL_ID         0x00C0
 #define VL53L0X_REG_RESULT_RANGE_STATUS             0x14
 #define VL53L0X_REG_RESULT_INTERRUPT_STATUS         0x13
+*/
+
+#define VL53L0X_REG_SYSTEM_FRESH_OUT_OF_RESET       0x016
 
 /* Expected Model ID */
 #define VL53L0X_EXPECTED_MODEL_ID                   0xEE
@@ -35,6 +41,7 @@ struct vl53l0x_config {
 
 struct vl53l0x_data {
     bool continuous_mode;
+    VL53L0X_Dev_t device;
     uint16_t last_distance;
 };
 
@@ -92,6 +99,20 @@ static int vl53l0x_init_sensor(const struct device *dev)
 {
     int ret;
     uint8_t val;
+
+    struct vl53l0x_data * driver_data = dev->data;
+
+    //VL53L0X_Dev_t vl53l0x_device = { 0 };    
+    //VL53L0X_Dev_t * device = &vl53l0x_device;
+    //device->dev = dev; 
+    
+    // Data Init
+    //LOG_DBG("Before init .. %d", device->Data.DeviceSpecificParameters.ModuleId);
+    ret = VL53L0X_DataInit(&driver_data->device);
+    if(ret < 0) {
+	    LOG_ERR("ERROR at init..");
+	    return ret;
+    }
     
     /* Check if sensor is out of reset */
     ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_SYSTEM_FRESH_OUT_OF_RESET, &val);
