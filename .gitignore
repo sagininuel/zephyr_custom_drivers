@@ -57,3 +57,5 @@ dkms.conf
 #Do not include dir.
 #/modules
 
+# vim .swp files
+*.swp
