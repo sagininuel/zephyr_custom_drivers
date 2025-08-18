@@ -11,6 +11,7 @@ zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/api/platform/inc)
 
 
 #zephyr_library_sources_ifdef(CONFIG_VL53 src/main.c)
+zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/vl53l0x_tests.c)
 zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/api/core/src/vl53l0x_api.c)
 zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/api/core/src/vl53l0x_api_core.c)
 zephyr_library_sources(${CMAKE_CURRENT_SOURCE_DIR}/src/api/core/src/vl53l0x_api_strings.c)

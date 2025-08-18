@@ -6,6 +6,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 
+#include <vl53l0x_def.h>
+#include <vl53l0x_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,6 +80,12 @@ static inline int vl53l0x_stop_continuous(const struct device *dev)
     
     return api->stop_continuous(dev);
 }
+
+/**
+ * @brief Perform ranging test
+ */
+VL53L0X_Error rangingTest(VL53L0X_Dev_t * pMyDevice);
+
 
 /**
  * @brief Check if data is ready

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2016, STMicroelectronics International N.V.
+ * Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,9 @@
 #include "vl53l0x_api.h"
 #include "vl53l0x_api_core.h"
 #include "vl53l0x_api_calibration.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(vl53l0x_api_calibration, LOG_LEVEL_DBG);
 
 #ifndef __KERNEL__
 #include <stdlib.h>
@@ -545,6 +548,7 @@ VL53L0X_Error count_enabled_spads(uint8_t spadArray[],
 
 VL53L0X_Error set_ref_spad_map(VL53L0X_DEV Dev, uint8_t *refSpadArray)
 {
+	LOG_DBG("Step 4 ..");
 	VL53L0X_Error status = VL53L0X_WriteMulti(Dev,
 				VL53L0X_REG_GLOBAL_CONFIG_SPAD_ENABLES_REF_0,
 				refSpadArray, 6);
@@ -553,6 +557,7 @@ VL53L0X_Error set_ref_spad_map(VL53L0X_DEV Dev, uint8_t *refSpadArray)
 
 VL53L0X_Error get_ref_spad_map(VL53L0X_DEV Dev, uint8_t *refSpadArray)
 {
+	
 	VL53L0X_Error status = VL53L0X_ReadMulti(Dev,
 				VL53L0X_REG_GLOBAL_CONFIG_SPAD_ENABLES_REF_0,
 				refSpadArray,
@@ -587,6 +592,7 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 	 * Checks are performed to ensure this.
 	 */
 
+
 	currentSpad = offset;
 	for (index = 0; index < spadCount; index++) {
 		get_next_good_spad(goodSpadArray, size, currentSpad,
@@ -609,17 +615,18 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 		enable_spad_bit(spadArray, size, currentSpad);
 		currentSpad++;
 	}
+	
 	*lastSpad = currentSpad;
-
+	
 	if (status == VL53L0X_ERROR_NONE)
-		status = set_ref_spad_map(Dev, spadArray);
-
-
+	status = set_ref_spad_map(Dev, spadArray);
+	
+	
 	if (status == VL53L0X_ERROR_NONE) {
 		status = get_ref_spad_map(Dev, checkSpadArray);
-
+		
 		i = 0;
-
+		
 		/* Compare spad maps. If not equal report error. */
 		while (i < size) {
 			if (spadArray[i] != checkSpadArray[i]) {
@@ -629,6 +636,8 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 			i++;
 		}
 	}
+	
+	
 	return status;
 }
 
@@ -968,7 +977,9 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 	 * The good spad map will be applied.
 	 */
 
+	
 	Status = VL53L0X_WrByte(Dev, 0xFF, 0x01);
+	
 
 	if (Status == VL53L0X_ERROR_NONE)
 		Status = VL53L0X_WrByte(Dev,
@@ -985,6 +996,8 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 		Status = VL53L0X_WrByte(Dev,
 			VL53L0X_REG_GLOBAL_CONFIG_REF_EN_START_SELECT,
 			startSelect);
+	
+	
 
 	for (index = 0; index < spadArraySize; index++)
 		Dev->Data.SpadData.RefSpadEnables[index] = 0;
@@ -996,6 +1009,7 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 			currentSpadIndex++;
 		}
 	}
+	
 	Status = enable_ref_spads(Dev,
 				isApertureSpads,
 				Dev->Data.SpadData.RefGoodSpadMap,
@@ -1005,6 +1019,8 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 				currentSpadIndex,
 				count,
 				&lastSpadIndex);
+	
+	
 
 	if (Status == VL53L0X_ERROR_NONE) {
 		VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, RefSpadsInitialised, 1);
@@ -1013,6 +1029,7 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 		VL53L0X_SETDEVICESPECIFICPARAMETER(Dev,
 			ReferenceSpadType, isApertureSpads);
 	}
+	
 
 	return Status;
 }
@@ -1082,14 +1099,20 @@ VL53L0X_Error VL53L0X_perform_single_ref_calibration(VL53L0X_DEV Dev,
 				VL53L0X_REG_SYSRANGE_MODE_START_STOP |
 				vhv_init_byte);
 
-	if (Status == VL53L0X_ERROR_NONE)
+	if (Status == VL53L0X_ERROR_NONE){
+		LOG_DBG("Step 4 ..");
 		Status = VL53L0X_measurement_poll_for_completion(Dev);
+	}
 
-	if (Status == VL53L0X_ERROR_NONE)
+	if (Status == VL53L0X_ERROR_NONE){
+		LOG_DBG("Step 5 ..");
 		Status = VL53L0X_ClearInterruptMask(Dev, 0);
+	}
 
-	if (Status == VL53L0X_ERROR_NONE)
+	if (Status == VL53L0X_ERROR_NONE){
+		LOG_DBG("Step 6 ..");
 		Status = VL53L0X_WrByte(Dev, VL53L0X_REG_SYSRANGE_START, 0x00);
+	}
 
 	return Status;
 }
@@ -1148,10 +1171,13 @@ VL53L0X_Error VL53L0X_perform_vhv_calibration(VL53L0X_DEV Dev,
 	if (restore_config)
 		SequenceConfig = PALDevDataGet(Dev, SequenceConfig);
 
+	LOG_DBG("Step 2 ..");
+
 	/* Run VHV */
 	Status = VL53L0X_WrByte(Dev, VL53L0X_REG_SYSTEM_SEQUENCE_CONFIG, 0x01);
 
 	if (Status == VL53L0X_ERROR_NONE)
+		LOG_DBG("Step 3 ..");
 		Status = VL53L0X_perform_single_ref_calibration(Dev, 0x40);
 
 	/* Read VHV from device */

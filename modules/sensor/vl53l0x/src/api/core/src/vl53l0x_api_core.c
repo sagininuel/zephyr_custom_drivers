@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2016, STMicroelectronics International N.V.
+ * Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,9 @@
 #define LOG_FUNCTION_END_FMT(status, fmt, ...) \
 	_LOG_FUNCTION_END_FMT(TRACE_MODULE_API, status, fmt, ##__VA_ARGS__)
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(vl53l0x_api_core, LOG_LEVEL_DBG);
+
 VL53L0X_Error VL53L0X_reverse_bytes(uint8_t *data, uint32_t size)
 {
 	VL53L0X_Error Status = VL53L0X_ERROR_NONE;
@@ -65,12 +68,14 @@ VL53L0X_Error VL53L0X_measurement_poll_for_completion(VL53L0X_DEV Dev)
 	uint32_t LoopNb;
 
 	LOG_FUNCTION_START("");
+	LOG_DBG("Step 5 ..");
 
 	LoopNb = 0;
 
 	do {
 		Status = VL53L0X_GetMeasurementDataReady(Dev, &NewDataReady);
 		if (Status != 0)
+			LOG_DBG("Step 6 ..");
 			break; /* the error is set */
 
 		if (NewDataReady == 1)

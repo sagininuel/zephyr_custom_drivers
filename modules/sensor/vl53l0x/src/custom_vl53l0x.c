@@ -7,10 +7,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
 
 #include <custom_vl53l0x.h>
 #include <vl53l0x_api.h>
 #include <vl53l0x_platform.h>
+#include <vl53l0x_def.h>
 
 LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
 
@@ -104,6 +106,10 @@ static int vl53l0x_init_sensor(const struct device *dev)
     int ret;
     uint8_t val;
 
+    // VL53L0X_Dev_t MyDevice;
+    // VL53L0X_Dev_t * pMyDevice = &MyDevice;
+    VL53L0X_DeviceInfo_t DeviceInfo;
+
     struct vl53l0x_data *driver_data = dev->data;
     driver_data->device.dev = dev;
 
@@ -119,6 +125,37 @@ static int vl53l0x_init_sensor(const struct device *dev)
         LOG_ERR("ERROR at init..");
         return ret;
     }
+
+    if(ret == VL53L0X_ERROR_NONE)
+    {
+        ret = VL53L0X_GetDeviceInfo(&driver_data->device, &DeviceInfo);
+        // ret = -1;
+        if(ret == VL53L0X_ERROR_NONE)
+        {
+            printk("VL53L0X_GetDeviceInfo:\n");
+            printk("Device Name : %s\n", DeviceInfo.Name);
+            printk("Device Type : %s\n", DeviceInfo.Type);
+            printk("Device ID : %s\n", DeviceInfo.ProductId);
+            printk("ProductRevisionMajor : %d\n", DeviceInfo.ProductRevisionMajor);
+        printk("ProductRevisionMinor : %d\n", DeviceInfo.ProductRevisionMinor);
+
+        if ((DeviceInfo.ProductRevisionMinor != 1) && (DeviceInfo.ProductRevisionMinor != 1)) {
+                printk("Error expected cut 1.1 but found cut %d.%d\n",
+                       DeviceInfo.ProductRevisionMajor, DeviceInfo.ProductRevisionMinor);
+                ret = VL53L0X_ERROR_NOT_SUPPORTED;
+            }
+        }
+        LOG_DBG("Status: %d", ret);
+    }
+
+    if(ret == VL53L0X_ERROR_NONE)
+    {
+        LOG_DBG("Ready for a ranging test ..");
+        ret = rangingTest(&driver_data->device);
+    }
+
+    // LOG_DBG("Status: %d", ret);
+
 
     /* Check if sensor is out of reset */
     ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_SYSTEM_FRESH_OUT_OF_RESET, &val);

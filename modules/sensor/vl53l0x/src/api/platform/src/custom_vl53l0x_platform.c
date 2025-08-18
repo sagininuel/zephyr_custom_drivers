@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright © 2015, STMicroelectronics International N.V.
+Copyright ï¿½ 2015, STMicroelectronics International N.V.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define LOG_FUNCTION_START(fmt, ... )           _LOG_FUNCTION_START(TRACE_MODULE_PLATFORM, fmt, ##__VA_ARGS__)
 #define LOG_FUNCTION_END(status, ... )          _LOG_FUNCTION_END(TRACE_MODULE_PLATFORM, status, ##__VA_ARGS__)
 #define LOG_FUNCTION_END_FMT(status, fmt, ... ) _LOG_FUNCTION_END_FMT(TRACE_MODULE_PLATFORM, status, fmt, ##__VA_ARGS__)
+
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(vl53l0x_custom_platform, LOG_LEVEL_DBG);
 
 /**
  * @def I2C_BUFFER_CONFIG
@@ -124,7 +128,13 @@ VL53L0X_Error VL53L0X_WriteMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata,
 
 	deviceAddress = Dev->I2cDevAddr;
 
-	status_int = VL53L0X_write_multi(deviceAddress, index, pdata, count);
+	// status_int = VL53L0X_write_multi(deviceAddress, index, pdata, count);
+    // const custom_vl53l0x_config_t * config = Dev->dev->config;
+	// status_int = i2c_reg_write_byte_dt(&config->i2c, index, *pdata); 
+
+    const custom_vl53l0x_config_t * config = Dev->dev->config;
+    status_int = i2c_burst_write_dt(&config->i2c, index, pdata, count);
+
 
 	if (status_int != 0)
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
@@ -145,7 +155,14 @@ VL53L0X_Error VL53L0X_ReadMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata, 
 
     deviceAddress = Dev->I2cDevAddr;
 
-	status_int = VL53L0X_read_multi(deviceAddress, index, pdata, count);
+	// status_int = VL53L0X_read_multi(deviceAddress, index, pdata, count);
+    // const custom_vl53l0x_config_t * config = Dev->dev->config;
+    // status_int = i2c_reg_read_byte_dt(&config->i2c, index, *pdata);
+    
+    const custom_vl53l0x_config_t * config = Dev->dev->config;
+	uint8_t buf[count];
+	status_int = i2c_burst_read_dt(&config->i2c, index, pdata, sizeof(buf)); 
+    
 
 	if (status_int != 0)
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
@@ -163,7 +180,7 @@ VL53L0X_Error VL53L0X_WrByte(VL53L0X_DEV Dev, uint8_t index, uint8_t data){
 
 	//status_int = VL53L0X_write_byte(deviceAddress, index, data);
 	
-    	const custom_vl53l0x_config_t * config = Dev->dev->config;
+    const custom_vl53l0x_config_t * config = Dev->dev->config;
 	status_int = i2c_reg_write_byte_dt(&config->i2c, index, data); 
 	if (status_int != 0)
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
@@ -260,7 +277,7 @@ VL53L0X_Error VL53L0X_RdWord(VL53L0X_DEV Dev, uint8_t index, uint16_t *data){
 
     //status_int = VL53L0X_read_word(deviceAddress, index, data);
 
-    	const custom_vl53l0x_config_t * config = Dev->dev->config;
+    const custom_vl53l0x_config_t * config = Dev->dev->config;
 	uint8_t buf[2];
 	status_int = i2c_burst_read_dt(&config->i2c, index, buf, sizeof(buf)); 
     
@@ -291,6 +308,7 @@ VL53L0X_Error  VL53L0X_RdDWord(VL53L0X_DEV Dev, uint8_t index, uint32_t *data){
 VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev){
 		
     VL53L0X_Error status = VL53L0X_ERROR_NONE;
+    LOG_DBG("2 sec sleeping..");
     k_msleep(2);
     return status;
 

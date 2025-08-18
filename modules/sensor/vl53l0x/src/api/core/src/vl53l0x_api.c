@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2016, STMicroelectronics International N.V.
+ * Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -412,8 +412,8 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	
 	LOG_DBG("First write complete ..");
 	LOG_DBG("Read data from device is done: %s", Dev->Data.DeviceSpecificParameters.ReadDataFromDeviceDone ? "YES" : "NO");
-	//VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone, 0);
-	//LOG_DBG("Dev Is valid: %d", VL53L0X_GETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone));
+	VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone, 0);
+	LOG_DBG("VL53L0x Done: %d", VL53L0X_GETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone));
 	
 #ifdef USE_IQC_STATION
 	if (Status == VL53L0X_ERROR_NONE)
@@ -559,6 +559,7 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 
 
 	LOG_FUNCTION_END(Status);
+	LOG_DBG("Setting Values Complete..");
 	return Status;
 }
 
@@ -621,7 +622,11 @@ VL53L0X_Error VL53L0X_StaticInit(VL53L0X_DEV Dev)
 
 	LOG_FUNCTION_START("");
 
+	LOG_DBG("Inside VL53L0X_staticInit ..");
+
 	Status = VL53L0X_get_info_from_device(Dev, 1);
+
+	LOG_DBG("Step 1 ..");
 
 	/* set the ref spad from NVM */
 	count	= (uint32_t)VL53L0X_GETDEVICESPECIFICPARAMETER(Dev,
@@ -629,20 +634,28 @@ VL53L0X_Error VL53L0X_StaticInit(VL53L0X_DEV Dev)
 	ApertureSpads = VL53L0X_GETDEVICESPECIFICPARAMETER(Dev,
 		ReferenceSpadType);
 
+	LOG_DBG("Step 2 ..");
+
 	/* NVM value invalid */
 	if ((ApertureSpads > 1) ||
 		((ApertureSpads == 1) && (count > 32)) ||
 		((ApertureSpads == 0) && (count > 12)))
 		Status = VL53L0X_perform_ref_spad_management(Dev, &refSpadCount,
 			&isApertureSpads);
-	else
+	else{
+		LOG_DBG("Step 3 ..");
 		Status = VL53L0X_set_reference_spads(Dev, count, ApertureSpads);
+		LOG_DBG("Set reference Spads status: %d", Status);
+	}
 
+		
+	
 
 	/* Initialize tuning settings buffer to prevent compiler warning. */
 	pTuningSettingBuffer = DefaultTuningSettings;
 
 	if (Status == VL53L0X_ERROR_NONE) {
+		LOG_DBG("Step 6 ..");
 		UseInternalTuningSettings = PALDevDataGet(Dev,
 			UseInternalTuningSettings);
 
@@ -653,18 +666,20 @@ VL53L0X_Error VL53L0X_StaticInit(VL53L0X_DEV Dev)
 			pTuningSettingBuffer = DefaultTuningSettings;
 
 	}
-
+	
 	if (Status == VL53L0X_ERROR_NONE)
-		Status = VL53L0X_load_tuning_settings(Dev,
-						      pTuningSettingBuffer);
-
-
-	/* Set interrupt config to new sample ready */
-	if (Status == VL53L0X_ERROR_NONE) {
-		Status = VL53L0X_SetGpioConfig(Dev, 0, 0,
-		VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY,
-		VL53L0X_INTERRUPTPOLARITY_LOW);
-	}
+	Status = VL53L0X_load_tuning_settings(Dev,
+		pTuningSettingBuffer);
+		
+		
+		/* Set interrupt config to new sample ready */
+		if (Status == VL53L0X_ERROR_NONE) {
+			Status = VL53L0X_SetGpioConfig(Dev, 0, 0,
+				VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY,
+				VL53L0X_INTERRUPTPOLARITY_LOW);
+			}
+			
+	
 
 	if (Status == VL53L0X_ERROR_NONE) {
 		Status = VL53L0X_WrByte(Dev, 0xFF, 0x01);
@@ -714,7 +729,7 @@ VL53L0X_Error VL53L0X_StaticInit(VL53L0X_DEV Dev)
 		Status = VL53L0X_SetSequenceStepEnable(Dev,
 		VL53L0X_SEQUENCESTEP_MSRC, 0);
 
-
+	
 	/* Set PAL State to standby */
 	if (Status == VL53L0X_ERROR_NONE)
 		PALDevDataSet(Dev, PalState, VL53L0X_STATE_IDLE);
@@ -780,6 +795,7 @@ VL53L0X_Error VL53L0X_StaticInit(VL53L0X_DEV Dev)
 			FinalRangeTimeoutMicroSecs,
 			seqTimeoutMicroSecs);
 	}
+	
 
 	LOG_FUNCTION_END(Status);
 	return Status;
@@ -2162,6 +2178,7 @@ VL53L0X_Error VL53L0X_PerformRefCalibration(VL53L0X_DEV Dev,
 	VL53L0X_Error Status = VL53L0X_ERROR_NONE;
 
 	LOG_FUNCTION_START("");
+	LOG_DBG("Step 1 ..");
 
 	Status = VL53L0X_perform_ref_calibration(Dev, pVhvSettings,
 		pPhaseCal, 1);
@@ -2414,8 +2431,11 @@ VL53L0X_Error VL53L0X_GetMeasurementDataReady(VL53L0X_DEV Dev,
 	InterruptConfig = VL53L0X_GETDEVICESPECIFICPARAMETER(Dev,
 		Pin0GpioFunctionality);
 
+	LOG_DBG("Interrupt Config: %d", InterruptConfig);
+
 	if (InterruptConfig ==
 		VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY) {
+		LOG_DBG("Interrupt Config ..");
 		Status = VL53L0X_GetInterruptMaskStatus(Dev, &InterruptMask);
 		if (InterruptMask ==
 		VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY)
@@ -3004,14 +3024,19 @@ VL53L0X_Error VL53L0X_GetInterruptMaskStatus(VL53L0X_DEV Dev,
 {
 	VL53L0X_Error Status = VL53L0X_ERROR_NONE;
 	uint8_t Byte;
+	uint8_t RangeStatus;
 
 	LOG_FUNCTION_START("");
 
 	Status = VL53L0X_RdByte(Dev, VL53L0X_REG_RESULT_INTERRUPT_STATUS,
 				&Byte);
+	Status = VL53L0X_RdByte(Dev, VL53L0X_REG_RESULT_RANGE_STATUS, &RangeStatus);
+	LOG_DBG("Interrupt : 0x%x Range : 0x%x", Byte, RangeStatus);
+	
 	*pInterruptMaskStatus = Byte & 0x07;
 
 	if (Byte & 0x18)
+		LOG_DBG("Step 6 ..");
 		Status = VL53L0X_ERROR_RANGE_ERROR;
 
 	LOG_FUNCTION_END(Status);
