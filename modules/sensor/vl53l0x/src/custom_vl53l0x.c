@@ -105,14 +105,14 @@ static int vl53l0x_init_sensor(const struct device *dev)
     uint8_t val;
 
     struct vl53l0x_data *driver_data = dev->data;
-    driver_data->device->dev = dev;
+    driver_data->device.dev = dev;
 
     // VL53L0X_Dev_t vl53l0x_device = { 0 };
     // VL53L0X_Dev_t * device = &vl53l0x_device;
     // device->dev = dev;
 
     // Data Init
-    // LOG_DBG("Before init .. %d", device->Data.DeviceSpecificParameters.ModuleId);
+    LOG_DBG("Before init .. %d", driver_data->device.Data.DeviceSpecificParameters.ModuleId);
     ret = VL53L0X_DataInit(&driver_data->device);
     if (ret < 0)
     {

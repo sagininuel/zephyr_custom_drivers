@@ -411,7 +411,7 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 		Status = VL53L0X_WrByte(Dev, 0x88, 0x00);
 	
 	LOG_DBG("First write complete ..");
-	LOG_DBG("Dev Is valid: %d", Dev->Data.DeviceSpecificParameters.ReadDataFromDeviceDone);
+	LOG_DBG("Read data from device is done: %s", Dev->Data.DeviceSpecificParameters.ReadDataFromDeviceDone ? "YES" : "NO");
 	//VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone, 0);
 	//LOG_DBG("Dev Is valid: %d", VL53L0X_GETDEVICESPECIFICPARAMETER(Dev, ReadDataFromDeviceDone));
 	
