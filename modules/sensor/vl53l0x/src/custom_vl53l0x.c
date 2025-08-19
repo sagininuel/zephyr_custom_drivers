@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
 
 /* Expected Model ID */
 #define VL53L0X_EXPECTED_MODEL_ID 0xEE
+#define VL53L0X_EXPECTED_REVISION_ID 0x10
 
 /* Measurement modes */
 #define VL53L0X_SINGLE_RANGING_MODE 0x01
@@ -81,9 +82,13 @@ static int vl53l0x_reg_read_u16(const struct device *dev, uint8_t reg, uint16_t 
 static int vl53l0x_check_model_id(const struct device *dev)
 {
     uint8_t model_id;
+    uint8_t revision_id;
+    uint16_t timeout_default;
     int ret;
 
     ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_IDENTIFICATION_MODEL_ID, &model_id);
+    ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_IDENTIFICATION_REVISION_ID, &revision_id);
+    ret = vl53l0x_reg_read_u16(dev, VL53L0X_REG_PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI, &timeout_default);
     if (ret < 0)
     {
         LOG_ERR("Failed to read model ID: %d", ret);
@@ -97,13 +102,21 @@ static int vl53l0x_check_model_id(const struct device *dev)
         return -ENODEV;
     }
 
+    if (revision_id != VL53L0X_EXPECTED_REVISION_ID)
+    {
+        LOG_ERR("Unexpected revision ID :0x%02x (expected 0x%02x)", 
+                revision_id, VL53L0X_EXPECTED_REVISION_ID);
+        return -ENODEV;
+    }
+
     LOG_DBG("Model ID verified: 0x%02x", model_id);
+    LOG_DBG("Revision ID verified: 0x%02x", revision_id);
     return 0;
 }
 
 static int vl53l0x_init_sensor(const struct device *dev)
 {
-    int ret;
+    int ret = 0;
     uint8_t val;
 
     // VL53L0X_Dev_t MyDevice;
@@ -116,15 +129,6 @@ static int vl53l0x_init_sensor(const struct device *dev)
     // VL53L0X_Dev_t vl53l0x_device = { 0 };
     // VL53L0X_Dev_t * device = &vl53l0x_device;
     // device->dev = dev;
-
-    // Data Init
-    LOG_DBG("Before init .. %d", driver_data->device.Data.DeviceSpecificParameters.ModuleId);
-    ret = VL53L0X_DataInit(&driver_data->device);
-    if (ret < 0)
-    {
-        LOG_ERR("ERROR at init..");
-        return ret;
-    }
 
     if(ret == VL53L0X_ERROR_NONE)
     {
@@ -148,10 +152,20 @@ static int vl53l0x_init_sensor(const struct device *dev)
         LOG_DBG("Status: %d", ret);
     }
 
+    // Data Init
+    LOG_DBG("Before init .. %d", driver_data->device.Data.DeviceSpecificParameters.ModuleId);
+    ret = VL53L0X_DataInit(&driver_data->device);
+    if (ret < 0)
+    {
+        LOG_ERR("ERROR at init..");
+        return ret;
+    }
+
     if(ret == VL53L0X_ERROR_NONE)
     {
         LOG_DBG("Ready for a ranging test ..");
         ret = rangingTest(&driver_data->device);
+        // vl53l0x_task(&driver_data->device);
     }
 
     // LOG_DBG("Status: %d", ret);

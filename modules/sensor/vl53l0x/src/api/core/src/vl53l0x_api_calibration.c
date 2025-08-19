@@ -557,11 +557,15 @@ VL53L0X_Error set_ref_spad_map(VL53L0X_DEV Dev, uint8_t *refSpadArray)
 
 VL53L0X_Error get_ref_spad_map(VL53L0X_DEV Dev, uint8_t *refSpadArray)
 {
-	
+	LOG_DBG("Step 5 ..");
 	VL53L0X_Error status = VL53L0X_ReadMulti(Dev,
 				VL53L0X_REG_GLOBAL_CONFIG_SPAD_ENABLES_REF_0,
 				refSpadArray,
 				6);
+	
+	if (status != 0){
+		LOG_DBG("Get ref spad map status..");
+	}
 	return status;
 }
 
@@ -581,6 +585,8 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 	int32_t nextGoodSpad = offset;
 	uint32_t currentSpad;
 	uint8_t checkSpadArray[6];
+
+	LOG_DBG("Enable Ref SPADS");
 
 	/*
 	 * This function takes in a spad array which may or may not have SPADS
@@ -619,7 +625,7 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 	*lastSpad = currentSpad;
 	
 	if (status == VL53L0X_ERROR_NONE)
-	status = set_ref_spad_map(Dev, spadArray);
+		status = set_ref_spad_map(Dev, spadArray);
 	
 	
 	if (status == VL53L0X_ERROR_NONE) {
@@ -630,6 +636,7 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 		/* Compare spad maps. If not equal report error. */
 		while (i < size) {
 			if (spadArray[i] != checkSpadArray[i]) {
+				LOG_DBG("Data integrity compromised ..");
 				status = VL53L0X_ERROR_REF_SPAD_INIT;
 				break;
 			}
@@ -637,7 +644,7 @@ VL53L0X_Error enable_ref_spads(VL53L0X_DEV Dev,
 		}
 	}
 	
-	
+	LOG_DBG("After Enable Ref SPADS status: %d", status);
 	return status;
 }
 
@@ -1021,8 +1028,10 @@ VL53L0X_Error VL53L0X_set_reference_spads(VL53L0X_DEV Dev,
 				&lastSpadIndex);
 	
 	
+	LOG_DBG("Step 6 ..");
 
 	if (Status == VL53L0X_ERROR_NONE) {
+		LOG_DBG("Step 7 ..");
 		VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, RefSpadsInitialised, 1);
 		VL53L0X_SETDEVICESPECIFICPARAMETER(Dev,
 			ReferenceSpadCount, (uint8_t)(count));
