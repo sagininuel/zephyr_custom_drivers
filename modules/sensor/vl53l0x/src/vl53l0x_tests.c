@@ -114,7 +114,7 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
             VL53L0X_GetLimitCheckCurrent(pMyDevice,
             		VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD, &LimitCheckCurrent);
 
-            printk("RANGE IGNORE THRESHOLD: %f\n\n", (double)LimitCheckCurrent/65536.0);
+            printk("RANGE IGNORE THRESHOLD: %f\n\n", (float)LimitCheckCurrent/(float)65536.0);
 
 
             if (Status != VL53L0X_ERROR_NONE) break;
