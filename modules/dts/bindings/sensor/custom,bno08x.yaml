@@ -3,7 +3,7 @@
 
 description: Hillcrest/CEVA BNO086 9-axis IMU sensor
 
-compatible: "ceva,bno086"
+compatible: "custom,bno08x"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 

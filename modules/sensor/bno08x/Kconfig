@@ -22,7 +22,7 @@ config CUSTOM_BNO08X_LOG_LEVEL
 config CUSTOM_BNO08X_TRIGGER
 	bool "CUSTOM_BNO08X interrupt support"
 	depends on GPIO
-	depends on BNO08x
+	depends on CUSTOM_BNO08x
 	help
 	  Enable interrupt support for CUSTOM_BNO08X sensor.
 

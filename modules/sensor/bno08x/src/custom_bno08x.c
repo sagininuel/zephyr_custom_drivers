@@ -10,6 +10,10 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
+#include <bno08x_platform.h>
+i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
+sh2_ProductIds_t prodIds; // Product IDs returned by sensor
+
 LOG_MODULE_REGISTER(CUSTOM_BNO08X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* CUSTOM_BNO08X I2C address */
@@ -124,6 +128,29 @@ static int bno086_init(const struct device *dev)
         LOG_ERR("I2C device not ready");
         return -ENODEV;
     }
+    
+    // Get a reference to _bno08x_hal
+    i2c_hal_t * bno08x_hal = &_bno08x_hal;
+
+    // Initialize the hal operations
+    bno08x_i2c_hal_init(bno08x_hal, true);
+
+    // Reset hardware
+    bno08x_hal->reset();
+
+    // Open SH2 interface (also registers non-sensor event handler.)
+    ret = sh2_open(&bno08x_hal->bno08x_i2c_hal, bno08x_hal->sh2_event_callback, NULL);
+    if (ret != SH2_OK){
+        return SH2_ERR;
+    }
+
+    // Check connection partially by getting the product id's
+    memset(&prodIds, 0, sizeof(prodIds));
+    ret = sh2_getProdIds(&prodIds);
+    if (ret != SH2_OK) {
+        return SH2_ERR;
+    }
+
 
     /* Read and verify chip ID */
     ret = bno086_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
