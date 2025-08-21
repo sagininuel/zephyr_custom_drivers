@@ -20,13 +20,13 @@
 typedef uint8_t (*hardwareReset_t) (void);
 
 typedef struct i2c_hal_s {
-    sh2_Hal_t bno08x_i2c_hal;
+    sh2_Hal_t sh2_Hal;
     bool isDefault;
     hardwareReset_t reset;
     sh2_EventCallback_t * sh2_event_callback;
 } i2c_hal_t;
 
-void bno08x_i2c_hal_init(i2c_hal_t * pHal, bool isDefault);
+void bno08x_i2c_hal_init(const struct i2c_dt_spec *i2c_dev, i2c_hal_t * pHal, bool isDefault);
 
 
 

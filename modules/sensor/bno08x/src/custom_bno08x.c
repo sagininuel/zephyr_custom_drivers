@@ -133,13 +133,13 @@ static int bno086_init(const struct device *dev)
     i2c_hal_t * bno08x_hal = &_bno08x_hal;
 
     // Initialize the hal operations
-    bno08x_i2c_hal_init(bno08x_hal, true);
+    bno08x_i2c_hal_init(&cfg->i2c, bno08x_hal, true);
 
     // Reset hardware
     bno08x_hal->reset();
 
     // Open SH2 interface (also registers non-sensor event handler.)
-    ret = sh2_open(&bno08x_hal->bno08x_i2c_hal, bno08x_hal->sh2_event_callback, NULL);
+    ret = sh2_open(&bno08x_hal->sh2_Hal, bno08x_hal->sh2_event_callback, NULL);
     if (ret != SH2_OK){
         return SH2_ERR;
     }
