@@ -150,19 +150,27 @@ static int bno086_init(const struct device *dev)
     if (ret != SH2_OK) {
         return SH2_ERR;
     }
+    else{    
+        for (int n = 0; n < prodIds.numEntries; n++) {
+            printk("Part %d : Version %d.%d.%d Build %d\n",
+                prodIds.entry[n].swPartNumber,
+                prodIds.entry[n].swVersionMajor, prodIds.entry[n].swVersionMinor,
+                prodIds.entry[n].swVersionPatch, prodIds.entry[n].swBuildNumber);
+        }
+    }
 
 
     /* Read and verify chip ID */
-    ret = bno086_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
-    if (ret < 0) {
-        LOG_ERR("Failed to read chip ID");
-        return ret;
-    }
+    // ret = bno086_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
+    // if (ret < 0) {
+    //     LOG_ERR("Failed to read chip ID");
+    //     return ret;
+    // }
 
-    if (chip_id != CUSTOM_BNO08X_CHIP_ID_VAL) {
-        LOG_ERR("Invalid chip ID: 0x%02x (expected 0x%02x)", chip_id, CUSTOM_BNO08X_CHIP_ID_VAL);
-        return -EINVAL;
-    }
+    // if (chip_id != CUSTOM_BNO08X_CHIP_ID_VAL) {
+    //     LOG_ERR("Invalid chip ID: 0x%02x (expected 0x%02x)", chip_id, CUSTOM_BNO08X_CHIP_ID_VAL);
+    //     return -EINVAL;
+    // }
 
     LOG_INF("CUSTOM_BNO08X sensor initialized successfully");
     return 0;
