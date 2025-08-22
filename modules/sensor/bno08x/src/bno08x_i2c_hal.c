@@ -5,7 +5,6 @@
 
 
  //Implementation of the BNO08X i2c Hardware Abstraction Layer
-
 #include <bno08x_platform.h>
 
 // static const struct device *i2c_device;
@@ -25,11 +24,13 @@ static const struct i2c_dt_spec * pHal_i2c;
 
 // Configuration structure for buffer management
 typedef struct i2c_hal_config_s {
-    size_t max_buffer_size;
+    size_t max_buffer_size_in;
+    size_t max_buffer_size_out;
 } i2c_hal_config_t;
 
 static i2c_hal_config_t i2c_hal_cfg = {
-    .max_buffer_size = 32, // Default I2C buffer size
+    .max_buffer_size_in = 32, // Default I2C buffer size
+    .max_buffer_size_out = SH2_HAL_MAX_PAYLOAD_OUT
 };
 
 static int i2chal_open(sh2_Hal_t *self) {
@@ -92,7 +93,7 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     
     LOG_DBG("Packet size: %u, buffer size: %u", packet_size, len);
     
-    size_t i2c_buffer_max = i2c_hal_cfg.max_buffer_size;
+    size_t i2c_buffer_max = i2c_hal_cfg.max_buffer_size_in;
     
     if (packet_size > len) {
         LOG_WRN("Packet size %u exceeds buffer size %u", packet_size, len);
@@ -142,9 +143,9 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     }
     
     // Set timestamp if requested
-    if (t_us) {
-        *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
-    }
+    // if (t_us) {
+    //     *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
+    // }
     
     return packet_size;
 }
@@ -155,25 +156,25 @@ static int i2chal_write(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len) {
         return 0;
     }
     
-    size_t i2c_buffer_max = i2c_hal_cfg.max_buffer_size;
+    // size_t i2c_buffer_max = i2c_hal_cfg.max_buffer_size_in;
     
-    LOG_DBG("I2C HAL write packet size: %u, max buffer size: %zu", 
-            len, i2c_buffer_max);
+    // LOG_DBG("I2C HAL write packet size: %u, max buffer size: %zu", 
+    //         len, i2c_buffer_max);
     
-    uint16_t write_size = MIN(i2c_buffer_max, len);
-    int ret = i2c_burst_write_dt(pHal_i2c, 0x00, pBuffer, write_size);
+    // uint16_t write_size = MIN(i2c_buffer_max, len);
+    int ret = i2c_burst_write_dt(pHal_i2c, 0x00, pBuffer, len);
     if (ret != 0) {
         LOG_ERR("I2C write failed: %d", ret);
         return 0;
     }
     
-    return write_size;
+    return len;
 }
 
 // Initialization function to set up I2C configuration
-int i2c_hal_init(size_t max_buffer_size) {
-    if (max_buffer_size > 0) {
-        i2c_hal_cfg.max_buffer_size = max_buffer_size;
+int i2c_hal_init(size_t max_buffer_size_in) {
+    if (max_buffer_size_in > 0) {
+        i2c_hal_cfg.max_buffer_size_in = max_buffer_size_in;
     }
     
     // Check if I2C device is ready
@@ -205,9 +206,9 @@ static int i2chal_read_reg(sh2_Hal_t *self, uint8_t reg_addr,
     }
     
     // Set timestamp if requested
-    if (t_us) {
-        *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
-    }
+    // if (t_us) {
+    //     *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
+    // }
     
     return len;
 }
@@ -257,6 +258,9 @@ void bno08x_i2c_hal_init(const struct i2c_dt_spec * i2c_dev, i2c_hal_t * pHal, b
     pHal->sh2_Hal.read = i2chal_read;
     pHal->sh2_Hal.write = i2chal_write;
     pHal->sh2_Hal.getTimeUs = NULL;
+
+    // Check i2c peripheral is ready.
+    i2c_hal_init(SH2_HAL_MAX_PAYLOAD_IN);
 
     // return &pHal->bno08x_i2c_hal;
 }
