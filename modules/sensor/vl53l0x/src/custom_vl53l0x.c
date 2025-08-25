@@ -114,16 +114,18 @@ static int vl53l0x_check_model_id(const struct device *dev)
     return 0;
 }
 
+static struct vl53l0x_data * driver_data;
+
 static int vl53l0x_init_sensor(const struct device *dev)
 {
     int ret = 0;
-    uint8_t val;
+    // uint8_t val;
 
     // VL53L0X_Dev_t MyDevice;
     // VL53L0X_Dev_t * pMyDevice = &MyDevice;
     VL53L0X_DeviceInfo_t DeviceInfo;
 
-    struct vl53l0x_data *driver_data = dev->data;
+    driver_data = dev->data;
     driver_data->device.dev = dev;
 
     // VL53L0X_Dev_t vl53l0x_device = { 0 };
@@ -168,135 +170,57 @@ static int vl53l0x_init_sensor(const struct device *dev)
         // vl53l0x_task(&driver_data->device);
     }
 
-    // LOG_DBG("Status: %d", ret);
-
-
-    /* Check if sensor is out of reset */
-    ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_SYSTEM_FRESH_OUT_OF_RESET, &val);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    if (val != 0x01)
-    {
-        LOG_ERR("Sensor not ready (fresh_out_of_reset = 0x%02x)", val);
-        return -ENODEV;
-    }
-
-    /* Basic sensor initialization - simplified version */
-    /* In a real implementation, you would load the full calibration data */
-
-    /* Clear system interrupt */
-    ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSTEM_INTERRUPT_CLEAR, 0x01);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    /* Configure GPIO interrupt */
-    ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSTEM_INTERRUPT_CONFIG_GPIO, 0x04);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
     LOG_INF("VL53L0X sensor initialized successfully");
     return 0;
 }
 
-static int vl53l0x_read_distance_impl(const struct device *dev, uint16_t *distance_mm)
-{
-    struct vl53l0x_data *data = dev->data;
-    uint8_t status;
-    uint16_t range_mm;
-    int ret;
 
-    if (!data->continuous_mode)
+static int vl53l0x_read_distance_impl(const struct device * dev, uint16_t * distance_mm)
+{   
+    VL53L0X_Error status =  VL53L0X_ERROR_NONE;
+    VL53L0X_RangingMeasurementData_t RangingMeasurementData;
+
+    // struct vl53l0x_data *driver_data = dev->data;
+    // driver_data->device.dev = dev;
+
+    LOG_DBG("Read distance ..");
+    status = VL53L0X_PerformSingleRangingMeasurement(&driver_data->device, &RangingMeasurementData);
+    print_pal_error(status);
+    print_range_status(&RangingMeasurementData);
+    printk("Return Status: %d", status);
+
+    printk("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
+    *distance_mm =  RangingMeasurementData.RangeMilliMeter;
+
+    if (status = 0)
     {
-        /* Start single measurement */
-        ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSRANGE_START, VL53L0X_SINGLE_RANGING_MODE);
-        if (ret < 0)
-        {
-            LOG_ERR("Failed to start single measurement: %d", ret);
-            return ret;
-        }
+        printk("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
+
     }
 
-    /* Wait for measurement completion */
-    int timeout = 100; /* 100ms timeout */
-    do
-    {
-        k_msleep(1);
-        ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_RESULT_INTERRUPT_STATUS, &status);
-        if (ret < 0)
-        {
-            return ret;
-        }
-        timeout--;
-    } while ((status & 0x07) == 0 && timeout > 0);
-
-    if (timeout == 0)
-    {
-        LOG_ERR("Measurement timeout");
-        return -ETIMEDOUT;
-    }
-
-    /* Read range status and data */
-    ret = vl53l0x_reg_read_u8(dev, VL53L0X_REG_RESULT_RANGE_STATUS, &status);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    /* Check range status (bits 7:4) */
-    uint8_t range_status = (status >> 4) & 0x0F;
-    if (range_status != 0)
-    {
-        LOG_WRN("Range error: status = 0x%02x", range_status);
-        return -EIO;
-    }
-
-    /* Read distance data - register 0x14 + 10 bytes, distance is at offset 10-11 */
-    ret = vl53l0x_reg_read_u16(dev, VL53L0X_REG_RESULT_RANGE_STATUS + 10, &range_mm);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    /* Clear interrupt */
-    ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSTEM_INTERRUPT_CLEAR, 0x01);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    *distance_mm = range_mm;
-    data->last_distance = range_mm;
-
-    LOG_DBG("Distance measurement: %d mm", range_mm);
-    return 0;
+    return status;
 }
 
 static int vl53l0x_start_continuous_impl(const struct device *dev)
 {
-    struct vl53l0x_data *data = dev->data;
-    int ret;
+    // struct vl53l0x_data *data = dev->data;
+    // int ret;
 
-    if (data->continuous_mode)
-    {
-        return 0; /* Already in continuous mode */
-    }
+    // if (data->continuous_mode)
+    // {
+    //     return 0; /* Already in continuous mode */
+    // }
 
-    ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSRANGE_START, VL53L0X_CONTINUOUS_RANGING_MODE);
-    if (ret < 0)
-    {
-        LOG_ERR("Failed to start continuous mode: %d", ret);
-        return ret;
-    }
+    // ret = vl53l0x_reg_write_u8(dev, VL53L0X_REG_SYSRANGE_START, VL53L0X_CONTINUOUS_RANGING_MODE);
+    // if (ret < 0)
+    // {
+    //     LOG_ERR("Failed to start continuous mode: %d", ret);
+    //     return ret;
+    // }
 
-    data->continuous_mode = true;
+    // data->continuous_mode = true;
     LOG_DBG("Continuous mode started");
+    continuousRangingTest(&driver_data->device);
     return 0;
 }
 

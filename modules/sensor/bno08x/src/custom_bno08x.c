@@ -120,7 +120,7 @@ static const struct sensor_driver_api bno086_driver_api = {
 static int bno086_init(const struct device *dev)
 {
     const struct bno086_config *cfg = dev->config;
-    uint8_t chip_id;
+    // uint8_t chip_id;
     int ret;
 
     /* Check if I2C device is ready */

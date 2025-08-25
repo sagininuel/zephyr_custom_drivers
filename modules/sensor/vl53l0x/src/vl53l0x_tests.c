@@ -114,7 +114,7 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
             VL53L0X_GetLimitCheckCurrent(pMyDevice,
             		VL53L0X_CHECKENABLE_RANGE_IGNORE_THRESHOLD, &LimitCheckCurrent);
 
-            printk("RANGE IGNORE THRESHOLD: %f\n\n", (float)LimitCheckCurrent/(float)65536.0);
+            // printk("RANGE IGNORE THRESHOLD: %f\n\n", (float)LimitCheckCurrent/(float)65536.0);
 
 
             if (Status != VL53L0X_ERROR_NONE) break;
@@ -126,6 +126,169 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
     }
     return Status;
 }
+
+
+VL53L0X_Error WaitMeasurementDataReady(VL53L0X_DEV Dev) {
+    VL53L0X_Error Status = VL53L0X_ERROR_NONE;
+    uint8_t NewDatReady=0;
+    uint32_t LoopNb;
+
+    // Wait until it finished
+    // use timeout to avoid deadlock
+    if (Status == VL53L0X_ERROR_NONE) {
+        LoopNb = 0;
+        do {
+            Status = VL53L0X_GetMeasurementDataReady(Dev, &NewDatReady);
+            if ((NewDatReady == 0x01) || Status != VL53L0X_ERROR_NONE) {
+                break;
+            }
+            LoopNb = LoopNb + 1;
+            VL53L0X_PollingDelay(Dev);
+        } while (LoopNb < VL53L0X_DEFAULT_MAX_LOOP);
+
+        if (LoopNb >= VL53L0X_DEFAULT_MAX_LOOP) {
+            Status = VL53L0X_ERROR_TIME_OUT;
+        }
+    }
+
+    return Status;
+}
+
+VL53L0X_Error WaitStopCompleted(VL53L0X_DEV Dev) {
+    VL53L0X_Error Status = VL53L0X_ERROR_NONE;
+    uint32_t StopCompleted=0;
+    uint32_t LoopNb;
+
+    // Wait until it finished
+    // use timeout to avoid deadlock
+    if (Status == VL53L0X_ERROR_NONE) {
+        LoopNb = 0;
+        do {
+            Status = VL53L0X_GetStopCompletedStatus(Dev, &StopCompleted);
+            if ((StopCompleted == 0x00) || Status != VL53L0X_ERROR_NONE) {
+                break;
+            }
+            LoopNb = LoopNb + 1;
+            VL53L0X_PollingDelay(Dev);
+        } while (LoopNb < VL53L0X_DEFAULT_MAX_LOOP);
+
+        if (LoopNb >= VL53L0X_DEFAULT_MAX_LOOP) {
+            Status = VL53L0X_ERROR_TIME_OUT;
+        }
+	
+    }
+
+    return Status;
+}
+    
+    
+VL53L0X_Error continuousRangingTest(VL53L0X_Dev_t *pMyDevice)
+{
+    VL53L0X_RangingMeasurementData_t    RangingMeasurementData;
+    VL53L0X_RangingMeasurementData_t   *pRangingMeasurementData    = &RangingMeasurementData;
+    VL53L0X_Error Status = VL53L0X_ERROR_NONE;
+    uint32_t refSpadCount;
+    uint8_t isApertureSpads;
+    uint8_t VhvSettings;
+    uint8_t PhaseCal;
+
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        printf ("Call of VL53L0X_StaticInit\n");
+        Status = VL53L0X_StaticInit(pMyDevice); // Device Initialization
+        // StaticInit will set interrupt by default
+        print_pal_error(Status);
+    }
+    
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        printf ("Call of VL53L0X_PerformRefCalibration\n");
+        Status = VL53L0X_PerformRefCalibration(pMyDevice,
+        		&VhvSettings, &PhaseCal); // Device Initialization
+        print_pal_error(Status);
+    }
+
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        printf ("Call of VL53L0X_PerformRefSpadManagement\n");
+        Status = VL53L0X_PerformRefSpadManagement(pMyDevice,
+        		&refSpadCount, &isApertureSpads); // Device Initialization
+        print_pal_error(Status);
+    }
+
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+
+        printf ("Call of VL53L0X_SetDeviceMode\n");
+        Status = VL53L0X_SetDeviceMode(pMyDevice, VL53L0X_DEVICEMODE_CONTINUOUS_RANGING); // Setup in single ranging mode
+        print_pal_error(Status);
+    }
+    
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+		printf ("Call of VL53L0X_StartMeasurement\n");
+		Status = VL53L0X_StartMeasurement(pMyDevice);
+		print_pal_error(Status);
+    }
+
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        uint32_t measurement;
+        uint32_t no_of_measurements = 32;
+
+        uint16_t* pResults = (uint16_t*)malloc(sizeof(uint16_t) * no_of_measurements);
+
+        for(measurement=0; measurement<no_of_measurements; measurement++)
+        {
+
+            Status = WaitMeasurementDataReady(pMyDevice);
+
+            if(Status == VL53L0X_ERROR_NONE)
+            {
+                Status = VL53L0X_GetRangingMeasurementData(pMyDevice, pRangingMeasurementData);
+
+                *(pResults + measurement) = pRangingMeasurementData->RangeMilliMeter;
+                printf("In loop measurement %d: %d\n", measurement, pRangingMeasurementData->RangeMilliMeter);
+
+                // Clear the interrupt
+                VL53L0X_ClearInterruptMask(pMyDevice, VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY);
+                VL53L0X_PollingDelay(pMyDevice);
+            } else {
+                break;
+            }
+        }
+
+        if(Status == VL53L0X_ERROR_NONE)
+        {
+            for(measurement=0; measurement<no_of_measurements; measurement++)
+            {
+                printf("measurement %d: %d\n", measurement, *(pResults + measurement));
+            }
+        }
+
+        free(pResults);
+    }
+
+    
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        printf ("Call of VL53L0X_StopMeasurement\n");
+        Status = VL53L0X_StopMeasurement(pMyDevice);
+    }
+
+    if(Status == VL53L0X_ERROR_NONE)
+    {
+        printf ("Wait Stop to be competed\n");
+        Status = WaitStopCompleted(pMyDevice);
+    }
+
+    if(Status == VL53L0X_ERROR_NONE)
+	Status = VL53L0X_ClearInterruptMask(pMyDevice,
+		VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY);
+
+    return Status;
+}
+
 
 // Enhanced Calibration Diagnostic Function
 VL53L0X_Error diagnose_calibration_failure(VL53L0X_Dev_t *pMyDevice) {
@@ -412,9 +575,9 @@ void vl53l0x_task(VL53L0X_Dev_t * my_device) {
     }
 
     // Perform Measurement
-    VL53L0X_Error measurement_status = perform_measurement(&my_device, &ranging_data);
+    VL53L0X_Error measurement_status = perform_measurement(my_device, &ranging_data);
     if (measurement_status == VL53L0X_ERROR_NONE) {
         printk("Distance: %d mm\n", ranging_data.RangeMilliMeter);
-        printk("Signal Rate: %.2f MCPS\n", (float)ranging_data.SignalRateRtnMegaCps / 65536.0);
+        printk("Signal Rate: %.2f MCPS\n", (double)ranging_data.SignalRateRtnMegaCps / 65536.0);
     }
 }
