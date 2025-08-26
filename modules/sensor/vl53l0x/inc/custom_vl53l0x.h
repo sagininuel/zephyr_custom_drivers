@@ -85,8 +85,16 @@ static inline int vl53l0x_stop_continuous(const struct device *dev)
  * @brief Perform ranging test
  */
 VL53L0X_Error rangingTest(VL53L0X_Dev_t * pMyDevice);
+
+/**
+ * Simple Initialization task
+ */
 void vl53l0x_task(VL53L0X_Dev_t * );
 
+/**
+ * @brief Initialize ble
+ */
+void ble_init(void);
 
 /**
  * @brief Check if data is ready

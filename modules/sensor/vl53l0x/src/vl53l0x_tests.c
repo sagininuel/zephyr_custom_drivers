@@ -192,6 +192,7 @@ VL53L0X_Error continuousRangingTest(VL53L0X_Dev_t *pMyDevice)
     uint8_t VhvSettings;
     uint8_t PhaseCal;
 
+    printf("\n\nCONTINOUS Measurements!\n\n");
     if(Status == VL53L0X_ERROR_NONE)
     {
         printf ("Call of VL53L0X_StaticInit\n");
