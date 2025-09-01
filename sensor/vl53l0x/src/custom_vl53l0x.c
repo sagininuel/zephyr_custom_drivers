@@ -14,7 +14,7 @@
 #include <vl53l0x_platform.h>
 #include <vl53l0x_def.h>
 
-LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_INF);
 
 /* VL53L0X Register Addresses */
 /*
@@ -109,8 +109,8 @@ static int vl53l0x_check_model_id(const struct device *dev)
         return -ENODEV;
     }
 
-    LOG_DBG("Model ID verified: 0x%02x", model_id);
-    LOG_DBG("Revision ID verified: 0x%02x", revision_id);
+    LOG_INF("Model ID verified: 0x%02x", model_id);
+    LOG_INF("Revision ID verified: 0x%02x", revision_id);
     return 0;
 }
 
@@ -138,15 +138,15 @@ static int vl53l0x_init_sensor(const struct device *dev)
         // ret = -1;
         if(ret == VL53L0X_ERROR_NONE)
         {
-            printk("VL53L0X_GetDeviceInfo:\n");
-            printk("Device Name : %s\n", DeviceInfo.Name);
-            printk("Device Type : %s\n", DeviceInfo.Type);
-            printk("Device ID : %s\n", DeviceInfo.ProductId);
-            printk("ProductRevisionMajor : %d\n", DeviceInfo.ProductRevisionMajor);
-        printk("ProductRevisionMinor : %d\n", DeviceInfo.ProductRevisionMinor);
+            LOG_DBG("VL53L0X_GetDeviceInfo:\n");
+            LOG_DBG("Device Name : %s\n", DeviceInfo.Name);
+            LOG_DBG("Device Type : %s\n", DeviceInfo.Type);
+            LOG_DBG("Device ID : %s\n", DeviceInfo.ProductId);
+            LOG_DBG("ProductRevisionMajor : %d\n", DeviceInfo.ProductRevisionMajor);
+            LOG_DBG("ProductRevisionMinor : %d\n", DeviceInfo.ProductRevisionMinor);
 
         if ((DeviceInfo.ProductRevisionMinor != 1) && (DeviceInfo.ProductRevisionMinor != 1)) {
-                printk("Error expected cut 1.1 but found cut %d.%d\n",
+                LOG_ERR("Error expected cut 1.1 but found cut %d.%d\n",
                        DeviceInfo.ProductRevisionMajor, DeviceInfo.ProductRevisionMinor);
                 ret = VL53L0X_ERROR_NOT_SUPPORTED;
             }
@@ -170,7 +170,7 @@ static int vl53l0x_init_sensor(const struct device *dev)
         // vl53l0x_task(&driver_data->device);
     }
 
-    LOG_INF("VL53L0X sensor initialized successfully");
+    LOG_DBG("VL53L0X sensor initialized successfully");
     return 0;
 }
 
@@ -187,15 +187,14 @@ static int vl53l0x_read_distance_impl(const struct device * dev, uint16_t * dist
     status = VL53L0X_PerformSingleRangingMeasurement(&driver_data->device, &RangingMeasurementData);
     print_pal_error(status);
     print_range_status(&RangingMeasurementData);
-    printk("Return Status: %d", status);
+    LOG_DBG("Return Status: %d\n", status);
 
-    printk("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
+    LOG_DBG("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
     *distance_mm =  RangingMeasurementData.RangeMilliMeter;
 
-    if (status = 0)
+    if (status == 0)
     {
-        printk("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
-
+        LOG_DBG("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
     }
 
     return status;
@@ -317,12 +316,14 @@ static int vl53l0x_init(const struct device *dev)
     return 0;
 }
 
-static const struct vl53l0x_driver_api vl53l0x_api = {
+static const vl53l0x_driver_api_t vl53l0x_api = {
     .read_distance = vl53l0x_read_distance_impl,
     .start_continuous = vl53l0x_start_continuous_impl,
     .stop_continuous = vl53l0x_stop_continuous_impl,
     .is_data_ready = vl53l0x_is_data_ready_impl,
+    .check_model_id = vl53l0x_check_model_id,
 };
+
 
 #define VL53L0X_DEFINE(inst)                                            \
     static struct vl53l0x_data vl53l0x_data_##inst;                     \

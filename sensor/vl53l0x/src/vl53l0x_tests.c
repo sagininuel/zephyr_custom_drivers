@@ -1,18 +1,24 @@
 /**
+ * Copyright (c) 2025, Remantek Inc.
+ * All rights reserved.
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
+#include <stdlib.h>
 
 #include <vl53l0x_api.h>
 #include <vl53l0x_platform.h>
 
+LOG_MODULE_REGISTER(vl53l0x_tests, LOG_LEVEL_INF);
+
 void print_pal_error(VL53L0X_Error Status){
     char buf[VL53L0X_MAX_STRING_LENGTH];
     VL53L0X_GetPalErrorString(Status, buf);
-    printk("API Status: %i : %s\n", Status, buf);
+    LOG_DBG("API Status: %i : %s\n", Status, buf);
 }
 
 void print_range_status(VL53L0X_RangingMeasurementData_t* pRangingMeasurementData){
@@ -26,7 +32,7 @@ void print_range_status(VL53L0X_RangingMeasurementData_t* pRangingMeasurementDat
     RangeStatus = pRangingMeasurementData->RangeStatus;
 
     VL53L0X_GetRangeStatusString(RangeStatus, buf);
-    printk("Range Status: %i : %s\n", RangeStatus, buf);
+    LOG_DBG("Range Status: %i : %s\n", RangeStatus, buf);
 
 }
 
@@ -44,14 +50,14 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
 
     if(Status == VL53L0X_ERROR_NONE)
     {
-        printk ("Call of VL53L0X_StaticInit\n");
+        LOG_DBG("Call of VL53L0X_StaticInit\n");
         Status = VL53L0X_StaticInit(pMyDevice); // Device Initialization
         print_pal_error(Status);
     }
     
     if(Status == VL53L0X_ERROR_NONE)
     {
-        printk ("Call of VL53L0X_PerformRefCalibration\n");
+        LOG_DBG("Call of VL53L0X_PerformRefCalibration\n");
         Status = VL53L0X_PerformRefCalibration(pMyDevice,
         		&VhvSettings, &PhaseCal); // Device Initialization
         print_pal_error(Status);
@@ -59,10 +65,10 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
 
     if(Status == VL53L0X_ERROR_NONE)
     {
-        printk ("Call of VL53L0X_PerformRefSpadManagement\n");
+        LOG_DBG("Call of VL53L0X_PerformRefSpadManagement\n");
         Status = VL53L0X_PerformRefSpadManagement(pMyDevice,
         		&refSpadCount, &isApertureSpads); // Device Initialization
-        printk ("refSpadCount = %d, isApertureSpads = %d\n", refSpadCount, isApertureSpads);
+        LOG_DBG("refSpadCount = %d, isApertureSpads = %d\n", refSpadCount, isApertureSpads);
         print_pal_error(Status);
     }
 
@@ -70,7 +76,7 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
     {
 
         // no need to do this when we use VL53L0X_PerformSingleRangingMeasurement
-        printk ("Call of VL53L0X_SetDeviceMode\n");
+        LOG_DBG("Call of VL53L0X_SetDeviceMode\n");
         Status = VL53L0X_SetDeviceMode(pMyDevice, VL53L0X_DEVICEMODE_SINGLE_RANGING); // Setup in single ranging mode
         print_pal_error(Status);
     }
@@ -104,7 +110,7 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
     if(Status == VL53L0X_ERROR_NONE)
     {
         for(i=0;i<10;i++){
-            printk ("Call of VL53L0X_PerformSingleRangingMeasurement\n");
+            LOG_DBG("Call of VL53L0X_PerformSingleRangingMeasurement\n");
             Status = VL53L0X_PerformSingleRangingMeasurement(pMyDevice,
             		&RangingMeasurementData);
 
@@ -119,7 +125,7 @@ VL53L0X_Error rangingTest(VL53L0X_Dev_t *pMyDevice)
 
             if (Status != VL53L0X_ERROR_NONE) break;
 
-            printk("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
+            LOG_DBG("Measured distance: %i\n\n", RangingMeasurementData.RangeMilliMeter);
 
 
         }
