@@ -1,8 +1,12 @@
-/*
+/**
+ * Copyright (c) 2025 Remantek Inc.
+ * All rights reserved
+ * 
  * SPDX-License-Identifier: Apache-2.0
+ * 
  */
 
-#define DT_DRV_COMPAT ceva_bno086
+#define DT_DRV_COMPAT custom_bno08x
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
@@ -11,10 +15,11 @@
 #include <zephyr/logging/log.h>
 
 #include <bno08x_platform.h>
+
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
 sh2_ProductIds_t prodIds; // Product IDs returned by sensor
 
-LOG_MODULE_REGISTER(CUSTOM_BNO08X, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_DBG);
 
 /* CUSTOM_BNO08X I2C address */
 #define CUSTOM_BNO08X_I2C_ADDR_DEFAULT 0x4A
@@ -31,7 +36,7 @@ LOG_MODULE_REGISTER(CUSTOM_BNO08X, CONFIG_SENSOR_LOG_LEVEL);
 #define CUSTOM_BNO08X_ACCEL_Z_LSB      0x0C
 #define CUSTOM_BNO08X_ACCEL_Z_MSB      0x0D
 
-struct bno086_data {
+struct bno08x_data {
     int16_t accel_x;
     int16_t accel_y;
     int16_t accel_z;
@@ -40,27 +45,27 @@ struct bno086_data {
     int16_t gyro_z;
 };
 
-struct bno086_config {
+struct bno08x_config {
     struct i2c_dt_spec i2c;
 };
 
-static int bno086_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
+static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 {
-    const struct bno086_config *cfg = dev->config;
+    const struct bno08x_config *cfg = dev->config;
     
     return i2c_reg_read_byte_dt(&cfg->i2c, reg, data);
 }
 
-static int bno086_write_reg(const struct device *dev, uint8_t reg, uint8_t data)
+static int bno08x_write_reg(const struct device *dev, uint8_t reg, uint8_t data)
 {
-    const struct bno086_config *cfg = dev->config;
+    const struct bno08x_config *cfg = dev->config;
     
     return i2c_reg_write_byte_dt(&cfg->i2c, reg, data);
 }
 
-static int bno086_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-    struct bno086_data *data = dev->data;
+    struct bno08x_data *data = dev->data;
     uint8_t accel_data[6];
     int ret;
 
@@ -70,7 +75,7 @@ static int bno086_sample_fetch(const struct device *dev, enum sensor_channel cha
 
     /* Read accelerometer data - this is simplified for demonstration */
     for (int i = 0; i < 6; i++) {
-        ret = bno086_read_reg(dev, CUSTOM_BNO08X_ACCEL_X_LSB + i, &accel_data[i]);
+        ret = bno08x_read_reg(dev, CUSTOM_BNO08X_ACCEL_X_LSB + i, &accel_data[i]);
         if (ret < 0) {
             LOG_ERR("Failed to read accelerometer data");
             return ret;
@@ -85,11 +90,11 @@ static int bno086_sample_fetch(const struct device *dev, enum sensor_channel cha
     return 0;
 }
 
-static int bno086_channel_get(const struct device *dev,
+static int bno08x_channel_get(const struct device *dev,
                              enum sensor_channel chan,
                              struct sensor_value *val)
 {
-    struct bno086_data *data = dev->data;
+    struct bno08x_data *data = dev->data;
 
     switch (chan) {
     case SENSOR_CHAN_ACCEL_X:
@@ -112,16 +117,18 @@ static int bno086_channel_get(const struct device *dev,
     return 0;
 }
 
-static const struct sensor_driver_api bno086_driver_api = {
-    .sample_fetch = bno086_sample_fetch,
-    .channel_get = bno086_channel_get,
+static const struct sensor_driver_api bno08x_driver_api = {
+    .sample_fetch = bno08x_sample_fetch,
+    .channel_get = bno08x_channel_get,
 };
 
-static int bno086_init(const struct device *dev)
+static int bno08x_init(const struct device *dev)
 {
-    const struct bno086_config *cfg = dev->config;
+    const struct bno08x_config *cfg = dev->config;
     // uint8_t chip_id;
     int ret;
+
+    LOG_DBG("I2C peripheral BNO08X at address: 0x%02x", cfg->i2c.addr);
 
     /* Check if I2C device is ready */
     if (!i2c_is_ready_dt(&cfg->i2c)) {
@@ -161,7 +168,7 @@ static int bno086_init(const struct device *dev)
 
 
     /* Read and verify chip ID */
-    // ret = bno086_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
+    // ret = bno08x_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
     // if (ret < 0) {
     //     LOG_ERR("Failed to read chip ID");
     //     return ret;
@@ -176,21 +183,21 @@ static int bno086_init(const struct device *dev)
     return 0;
 }
 
-#define CUSTOM_BNO08X_INIT(n)                                          \
-    static struct bno086_data bno086_data_##n;                 \
-                                                               \
-    static const struct bno086_config bno086_config_##n = {   \
-        .i2c = I2C_DT_SPEC_INST_GET(n),                       \
-    };                                                         \
-                                                               \
-    SENSOR_DEVICE_DT_INST_DEFINE(n,                           \
-                                 bno086_init,                  \
-                                 NULL,                         \
-                                 &bno086_data_##n,             \
-                                 &bno086_config_##n,           \
-                                 POST_KERNEL,                  \
-                                 CONFIG_SENSOR_INIT_PRIORITY,  \
-                                 &bno086_driver_api);
+#define CUSTOM_BNO08X_INIT(inst)                                  \
+    static struct bno08x_data bno08x_data_##inst;                 \
+                                                                  \
+    static const struct bno08x_config bno08x_config_##inst = {    \
+        .i2c = I2C_DT_SPEC_INST_GET(inst),                        \
+    };                                                            \
+                                                                  \
+    SENSOR_DEVICE_DT_INST_DEFINE(inst,                            \
+                                 bno08x_init,                     \
+                                 NULL,                            \
+                                 &bno08x_data_##inst,             \
+                                 &bno08x_config_##inst,           \
+                                 POST_KERNEL,                     \
+                                 CONFIG_SENSOR_INIT_PRIORITY,     \
+                                 &bno08x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CUSTOM_BNO08X_INIT)
 

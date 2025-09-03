@@ -14,7 +14,7 @@
 #include <vl53l0x_platform.h>
 #include <vl53l0x_def.h>
 
-LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(vl53l0x, LOG_LEVEL_DBG);
 
 /* VL53L0X Register Addresses */
 /*
@@ -265,6 +265,8 @@ static int vl53l0x_init(const struct device *dev)
     const struct vl53l0x_config *config = dev->config;
     struct vl53l0x_data *data = dev->data;
     int ret;
+
+    LOG_INF("I2C peripheral 'VL53L0x' at address: 0x%02x", config->i2c.addr);
 
     /* Check I2C bus */
     if (!i2c_is_ready_dt(&config->i2c))
