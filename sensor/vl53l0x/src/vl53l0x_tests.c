@@ -14,7 +14,7 @@
 #include <vl53l0x_api.h>
 #include <vl53l0x_platform.h>
 
-LOG_MODULE_REGISTER(vl53l0x_tests, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(vl53l0x_tests, LOG_LEVEL_DBG);
 
 void print_pal_error(VL53L0X_Error Status){
     char buf[VL53L0X_MAX_STRING_LENGTH];
