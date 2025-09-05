@@ -190,47 +190,46 @@ int i2c_hal_init(size_t max_buffer_size_in) {
 }
 
 // Alternative functions for different register addresses if needed
-static int i2chal_read_reg(sh2_Hal_t *self, uint8_t reg_addr, 
-                          uint8_t *pBuffer, unsigned len, uint32_t *t_us) {
-    LOG_DBG("I2C HAL read from register 0x%02X", reg_addr);
+// static int i2chal_read_reg(sh2_Hal_t *self, uint8_t reg_addr, 
+//                           uint8_t *pBuffer, unsigned int len, uint32_t *t_us) {
+//     LOG_DBG("I2C HAL read from register 0x%02X", reg_addr);
     
-    if (!i2c_is_ready_dt(pHal_i2c)) {
-        LOG_ERR("I2C device not ready");
-        return 0;
-    }
+//     if (!i2c_is_ready_dt(pHal_i2c)) {
+//         LOG_ERR("I2C device not ready");
+//         return 0;
+//     }
     
-    int ret = i2c_burst_read_dt(pHal_i2c, reg_addr, pBuffer, len);
-    if (ret != 0) {
-        LOG_ERR("Failed to read from register 0x%02X: %d", reg_addr, ret);
-        return 0;
-    }
+//     int ret = i2c_burst_read_dt(pHal_i2c, reg_addr, pBuffer, len);
+//     if (ret != 0) {
+//         LOG_ERR("Failed to read from register 0x%02X: %d", reg_addr, ret);
+//         return 0;
+//     }
     
-    // Set timestamp if requested
-    // if (t_us) {
-    //     *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
-    // }
+//     // Set timestamp if requested
+//     // if (t_us) {
+//     //     *t_us = k_cyc_to_us_ceil32(k_cycle_get_32());
+//     // }
     
-    return len;
-}
+//     return len;
+// }
 
-static int i2chal_write_reg(sh2_Hal_t *self, uint8_t reg_addr, 
-                           uint8_t *pBuffer, unsigned len) {
-    LOG_DBG("I2C HAL write to register 0x%02X", reg_addr);
+// static int i2chal_write_reg(sh2_Hal_t *self, uint8_t reg_addr, 
+//                            uint8_t *pBuffer, unsigned int len) {
+//     LOG_DBG("I2C HAL write to register 0x%02X", reg_addr);
     
-    if (!i2c_is_ready_dt(pHal_i2c)) {
-        LOG_ERR("I2C device not ready");
-        return 0;
-    }
+//     if (!i2c_is_ready_dt(pHal_i2c)) {
+//         LOG_ERR("I2C device not ready");
+//         return 0;
+//     }
     
-    int ret = i2c_burst_write_dt(pHal_i2c, reg_addr, pBuffer, len);
-    if (ret != 0) {
-        LOG_ERR("Failed to write to register 0x%02X: %d", reg_addr, ret);
-        return 0;
-    }
+//     int ret = i2c_burst_write_dt(pHal_i2c, reg_addr, pBuffer, len);
+//     if (ret != 0) {
+//         LOG_ERR("Failed to write to register 0x%02X: %d", reg_addr, ret);
+//         return 0;
+//     }
     
-    return len;
-}
-
+//     return len;
+// }
 
 
 static uint8_t hardware_reset(void)
