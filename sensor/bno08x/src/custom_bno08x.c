@@ -56,12 +56,12 @@ static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
     return i2c_reg_read_byte_dt(&cfg->i2c, reg, data);
 }
 
-static int bno08x_write_reg(const struct device *dev, uint8_t reg, uint8_t data)
-{
-    const struct bno08x_config *cfg = dev->config;
+// static int bno08x_write_reg(const struct device *dev, uint8_t reg, uint8_t data)
+// {
+//     const struct bno08x_config *cfg = dev->config;
     
-    return i2c_reg_write_byte_dt(&cfg->i2c, reg, data);
-}
+//     return i2c_reg_write_byte_dt(&cfg->i2c, reg, data);
+// }
 
 static int bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
