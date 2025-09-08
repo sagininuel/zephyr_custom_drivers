@@ -136,6 +136,8 @@ static int bno08x_init(const struct device *dev)
         return -ENODEV;
     }
     
+    // return 0; // Go to main application (for debug)
+    
     // Get a reference to _bno08x_hal
     i2c_hal_t * bno08x_hal = &_bno08x_hal;
 
@@ -150,6 +152,10 @@ static int bno08x_init(const struct device *dev)
     if (ret != SH2_OK){
         return SH2_ERR;
     }
+
+    LOG_DBG("Soft Reset complete..");
+
+    return 0;
 
     // Check connection partially by getting the product id's
     memset(&prodIds, 0, sizeof(prodIds));

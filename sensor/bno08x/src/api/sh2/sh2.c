@@ -43,6 +43,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(sh2, LOG_LEVEL_DBG);
+
 // ------------------------------------------------------------------------
 // Private type definitions
 
@@ -655,6 +660,7 @@ static int opProcess(sh2_t *pSh2, const sh2_Op_t *pOp)
 
         // Update the time
         now_us = pSh2->pHal->getTimeUs(pSh2->pHal);
+        
     }
 
     if (pSh2->pOp != 0) {
@@ -1869,7 +1875,9 @@ int sh2_open(sh2_Hal_t *pHal,
     pSh2->sensorCookie = 0;
 
     // Open SHTP layer
+    LOG_DBG("SHTP opening ...");
     pSh2->pShtp = shtp_open(pSh2->pHal);
+    LOG_DBG("SHTP Open Complete ...");
     if (pSh2->pShtp == 0) {
         // Error opening SHTP
         return SH2_ERR;
@@ -1890,16 +1898,20 @@ int sh2_open(sh2_Hal_t *pHal,
 
     // Wait for reset notifications to arrive.
     // The client can't talk to the sensor hub until that happens.
+    LOG_DBG("Wait for reset notification ...");
     uint32_t start_us = pSh2->pHal->getTimeUs(pSh2->pHal);
     uint32_t now_us = start_us;
     while (((now_us - start_us) < ADVERT_TIMEOUT_US) &&
            (!pSh2->resetComplete))
     {
+        LOG_DBG("SHTP Service");
         shtp_service(pSh2->pShtp);
+        LOG_DBG("SHTP after service");
         now_us = pSh2->pHal->getTimeUs(pSh2->pHal);
     }
     
     // No errors.
+    LOG_DBG("No errors");
     return SH2_OK;
 }
 
