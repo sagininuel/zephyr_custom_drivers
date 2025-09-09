@@ -167,23 +167,23 @@ static int i2chal_open(sh2_Hal_t *self) {
     LOG_DBG("I2C device ready!");
 
     // ret = bno08x_read_packet(pHal_i2c);
-    ret = bno08x_soft_reset_with_verification(pHal_i2c);
+    // ret = bno08x_soft_reset_with_verification(pHal_i2c);
 
 
-    LOG_DBG("Reset complete, going back...");
+    // LOG_DBG("Reset complete, going back...");
 
-    return ret;
+    // return ret;
 
 
     // Future Debug
-    if (ret != 0) {
-        LOG_WRN("Initial I2C read failed. Attempting write anyway...");
-    }
+    // if (ret != 0) {
+    //     LOG_WRN("Initial I2C read failed. Attempting write anyway...");
+    // }
 
     // Data Memory Barrier
-    __DMB();
+    // __DMB();
 
-    uint8_t softreset_pkt[] = {1, 0, 1, 0, 1};
+    uint8_t softreset_pkt[] = {5, 0, 1, 0, 1};
     // uint8_t softreset_pkt[] = {
     //     0x01, // LSB of payload size
     //     0x00, // MSB of payload size
@@ -196,6 +196,7 @@ static int i2chal_open(sh2_Hal_t *self) {
         LOG_DBG("Loop cycle: %d", attempts);
         // ret = i2c_burst_write_dt(pHal_i2c, 1, softreset_pkt, sizeof(softreset_pkt));
         ret = i2c_write_dt(pHal_i2c, softreset_pkt, sizeof(softreset_pkt));
+        // ret = i2c_write_dt(pHal_i2c, softreset_pkt, sizeof(softreset_pkt));
         // ret = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_REGISTER_SYS_TRIGGER, BNO055_COMMAND_RESET);
         if (ret == 0) {
             success = true;
@@ -205,7 +206,7 @@ static int i2chal_open(sh2_Hal_t *self) {
         // k_msleep(30);
     }
 
-    __DMB();
+    // __DMB();
     
     if (!success) {
         LOG_ERR("Failed to send soft reset after 5 attempts");
@@ -254,7 +255,108 @@ static void i2chal_close(sh2_Hal_t *self) {
     // In Zephyr, typically no explicit close needed for I2C
 }
 
-static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len, uint32_t *t_us) 
+// Helper function to read from I2C device
+static bool i2c_read_bytes(uint8_t *buffer, size_t len) {
+    // int ret = i2c_read(i2c_device.i2c_dev, buffer, len, i2c_device.device_addr);
+    int ret = i2c_read_dt(pHal_i2c, buffer, len);
+    if (ret != 0) {
+        LOG_ERR("I2C read failed: %d", ret);
+        return false;
+    }
+    return true;
+}
+
+static size_t i2c_get_max_buffer_size(void) {
+    // return i2c_device.max_buffer_size;
+    return SH2_HAL_MAX_PAYLOAD_IN;
+}
+
+static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
+                       uint32_t *t_us) {
+    LOG_DBG("I2C HAL read");
+    
+    uint8_t header[4];
+    if (!i2c_read_bytes(header, 4)) {
+        LOG_ERR("Failed to read I2C header");
+        return 0;
+    }
+    
+    // Determine amount to read
+    uint16_t packet_size = (uint16_t)header[0] | (uint16_t)header[1] << 8;
+    // Unset the "continue" bit
+    packet_size &= ~0x8000;
+    
+    LOG_DBG("Read SHTP header. Packet size: %u & buffer size: %u", 
+            packet_size, len);
+    
+    size_t i2c_buffer_max = i2c_get_max_buffer_size();
+    if (packet_size > len) {
+        // packet wouldn't fit in our buffer
+        LOG_ERR("Packet size %u exceeds buffer size %u", packet_size, len);
+        return 0;
+    }
+    
+    // the number of non-header bytes to read
+    uint16_t cargo_remaining = packet_size;
+    uint8_t i2c_buffer[i2c_buffer_max];
+    uint16_t read_size;
+    uint16_t cargo_read_amount = 0;
+    bool first_read = true;
+    
+    while (cargo_remaining > 0) {
+        if (first_read) {
+            read_size = MIN(i2c_buffer_max, (size_t)cargo_remaining);
+        } else {
+            read_size = MIN(i2c_buffer_max, (size_t)cargo_remaining + 4);
+        }
+        
+        LOG_DBG("Reading from I2C: %u", read_size);
+        LOG_DBG("Remaining to read: %u", cargo_remaining);
+        
+        if (!i2c_read_bytes(i2c_buffer, read_size)) {
+            LOG_ERR("Failed to read I2C data");
+            return 0;
+        }
+        
+        if (first_read) {
+            // The first time we're saving the "original" header, so include it in the
+            // cargo count
+            cargo_read_amount = read_size;
+            memcpy(pBuffer, i2c_buffer, cargo_read_amount);
+            first_read = false;
+        } else {
+            // this is not the first read, so copy from 4 bytes after the beginning of
+            // the i2c buffer to skip the header included with every new i2c read and
+            // don't include the header in the amount of cargo read
+            cargo_read_amount = read_size - 4;
+            memcpy(pBuffer, i2c_buffer + 4, cargo_read_amount);
+        }
+        
+        // advance our pointer by the amount of cargo read
+        pBuffer += cargo_read_amount;
+        // mark the cargo as received
+        cargo_remaining -= cargo_read_amount;
+    }
+    
+    // Optional: Log the received data for debugging
+    #if LOG_LEVEL >= LOG_LEVEL_DBG
+    LOG_DBG("Received packet data:");
+    for (int i = 0; i < packet_size; i++) {
+        printk("%02X ", (pBuffer - packet_size)[i]);
+        if (i % 16 == 15) printk("\n");
+    }
+    printk("\n");
+    #endif
+    
+    // Set timestamp if requested
+    if (t_us != NULL) {
+        *t_us = k_uptime_get_32() * 1000; // Convert ms to us
+    }
+    
+    return packet_size;
+}
+
+static int i2chal_read_good(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len, uint32_t *t_us) 
 {
     LOG_DBG("I2C HAL read");
     

@@ -35,6 +35,10 @@
 
 #include <string.h>
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(SH2, LOG_LEVEL_DBG);
+
 // ------------------------------------------------------------------------
 // Private type definitions
 
@@ -646,6 +650,7 @@ static void executableDeviceHdlr(void *cookie, uint8_t *payload, uint16_t len, u
     switch (payload[0]) {
         case EXECUTABLE_DEVICE_RESP_RESET_COMPLETE:
             // reset process is now done.
+            LOG_DBG("RESET COMPLETE!");
             pSh2->resetComplete = true;
             
             // Notify client that reset is complete.

@@ -155,12 +155,13 @@ static int bno08x_init(const struct device *dev)
 
     LOG_DBG("Soft Reset complete..");
 
-    return 0;
+    // return 0;
 
     // Check connection partially by getting the product id's
     memset(&prodIds, 0, sizeof(prodIds));
     ret = sh2_getProdIds(&prodIds);
     if (ret != SH2_OK) {
+        LOG_DBG("PRODUCT ID Fail!");
         return SH2_ERR;
     }
     else{    

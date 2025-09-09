@@ -25,6 +25,10 @@
 
 #include <string.h>
 
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(SHTP, LOG_LEVEL_DBG);
+
 // ------------------------------------------------------------------------
 // Private types
 
@@ -688,6 +692,7 @@ void *shtp_open(sh2_Hal_t *pHal)
     pShtp->advertPhase = ADVERT_REQUESTED;
 
     // Open HAL
+    LOG_DBG("OPENING HAL...");
     pHal->open(pHal);
 
     return pShtp;
