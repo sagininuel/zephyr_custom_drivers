@@ -14,40 +14,26 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
-#include <bno08x_platform.h>
+#include <custom_bno08x.h>
+
+LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_INF);
+
 
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
 sh2_ProductIds_t prodIds; // Product IDs returned by sensor
+sh2_SensorValue_t * _sensor_value = NULL;
 
-LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_DBG);
+// Handle sensor events.
+static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
+  int rc;
 
-/* CUSTOM_BNO08X I2C address */
-#define CUSTOM_BNO08X_I2C_ADDR_DEFAULT 0x4A
-
-/* CUSTOM_BNO08X Register definitions */
-#define CUSTOM_BNO08X_CHIP_ID_REG      0x00
-#define CUSTOM_BNO08X_CHIP_ID_VAL      0x86
-
-/* Sample register for demonstration */
-#define CUSTOM_BNO08X_ACCEL_X_LSB      0x08
-#define CUSTOM_BNO08X_ACCEL_X_MSB      0x09
-#define CUSTOM_BNO08X_ACCEL_Y_LSB      0x0A
-#define CUSTOM_BNO08X_ACCEL_Y_MSB      0x0B
-#define CUSTOM_BNO08X_ACCEL_Z_LSB      0x0C
-#define CUSTOM_BNO08X_ACCEL_Z_MSB      0x0D
-
-struct bno08x_data {
-    int16_t accel_x;
-    int16_t accel_y;
-    int16_t accel_z;
-    int16_t gyro_x;
-    int16_t gyro_y;
-    int16_t gyro_z;
-};
-
-struct bno08x_config {
-    struct i2c_dt_spec i2c;
-};
+  rc = sh2_decodeSensorEvent(_sensor_value, event);
+  if (rc != SH2_OK) {
+    LOG_DBG("BNO08x - Error decoding sensor event");
+    // _sensor_value->timestamp = 0;
+    return;
+  }
+}
 
 static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 {
@@ -63,7 +49,7 @@ static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 //     return i2c_reg_write_byte_dt(&cfg->i2c, reg, data);
 // }
 
-static int bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int _bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
     struct bno08x_data *data = dev->data;
     uint8_t accel_data[6];
@@ -88,6 +74,21 @@ static int bno08x_sample_fetch(const struct device *dev, enum sensor_channel cha
     data->accel_z = (int16_t)((accel_data[5] << 8) | accel_data[4]);
 
     return 0;
+}
+
+static int bno08x_sample_fetch(sh2_SensorValue_t * value)
+{
+    _sensor_value = value;
+
+    value->timestamp = 0;
+    
+    sh2_service();
+
+    if(value->timestamp == 0 && value->sensorId != SH2_GYRO_INTEGRATED_RV){
+        return false;
+    }
+    
+    return true;
 }
 
 static int bno08x_channel_get(const struct device *dev,
@@ -117,14 +118,45 @@ static int bno08x_channel_get(const struct device *dev,
     return 0;
 }
 
-static const struct sensor_driver_api bno08x_driver_api = {
+static bool configure_reports_impl (const struct device * dev, sh2_SensorId_t sensorId, uint32_t interval_us)
+{
+    LOG_DBG("Configure Reports!");
+    
+    sh2_SensorConfig_t config;
+
+    config.changeSensitivityEnabled = false;
+    config.wakeupEnabled = false;
+    config.changeSensitivityRelative = false;
+    config.alwaysOnEnabled = false;
+    config.changeSensitivity = 0;
+    config.batchInterval_us = 0;
+    config.sensorSpecific = 0;
+
+    config.reportInterval_us = interval_us;
+    int status = sh2_setSensorConfig(sensorId, &config);
+
+    if (status != SH2_OK) {
+        return false;
+    }
+
+    return true;
+}
+
+static const struct sensor_driver_api bno08x_sensor_driver_api = {
     .sample_fetch = bno08x_sample_fetch,
     .channel_get = bno08x_channel_get,
+};
+
+static const struct custom_driver_api bno08x_custom_driver_api = {
+    .configure_reports = configure_reports_impl,
 };
 
 static int bno08x_init(const struct device *dev)
 {
     const struct bno08x_config *cfg = dev->config;
+    struct bno08x_data *data = dev->data;
+    data->custom_api = &bno08x_custom_driver_api;
+
     // uint8_t chip_id;
     int ret;
 
@@ -173,18 +205,8 @@ static int bno08x_init(const struct device *dev)
         }
     }
 
-
-    /* Read and verify chip ID */
-    // ret = bno08x_read_reg(dev, CUSTOM_BNO08X_CHIP_ID_REG, &chip_id);
-    // if (ret < 0) {
-    //     LOG_ERR("Failed to read chip ID");
-    //     return ret;
-    // }
-
-    // if (chip_id != CUSTOM_BNO08X_CHIP_ID_VAL) {
-    //     LOG_ERR("Invalid chip ID: 0x%02x (expected 0x%02x)", chip_id, CUSTOM_BNO08X_CHIP_ID_VAL);
-    //     return -EINVAL;
-    // }
+    // Register sensor listener
+    sh2_setSensorCallback(sensorHandler, NULL);
 
     LOG_INF("CUSTOM_BNO08X sensor initialized successfully");
     return 0;
@@ -198,13 +220,25 @@ static int bno08x_init(const struct device *dev)
     };                                                            \
                                                                   \
     SENSOR_DEVICE_DT_INST_DEFINE(inst,                            \
-                                 bno08x_init,                     \
+                                 bno08x_init,              \
                                  NULL,                            \
                                  &bno08x_data_##inst,             \
                                  &bno08x_config_##inst,           \
                                  POST_KERNEL,                     \
                                  CONFIG_SENSOR_INIT_PRIORITY,     \
-                                 &bno08x_driver_api);
+                                 &bno08x_sensor_driver_api);      
+                                                                  
+/*                                                            
+    DEVICE_DT_INST_DEFINE(inst,                                   \
+                          NULL,                                   \
+                          NULL,                                   \
+                          &bno08x_data_##inst,                    \
+                          &bno08x_config_##inst,                  \
+                          POST_KERNEL,                            \
+                          CONFIG_SENSOR_INIT_PRIORITY + 1,        \
+                          &bno08x_custom_driver_api);             
+
+*/
 
 DT_INST_FOREACH_STATUS_OKAY(CUSTOM_BNO08X_INIT)
 

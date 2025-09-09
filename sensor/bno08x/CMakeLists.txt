@@ -7,6 +7,7 @@ zephyr_library_sources(src/bno08x_i2c_hal.c)
 zephyr_library_sources(src/api/adafruit_sh2/sh2.c)
 zephyr_library_sources(src/api/adafruit_sh2/shtp.c)
 zephyr_library_sources(src/api/adafruit_sh2/sh2_util.c)
+zephyr_library_sources(src/api/adafruit_sh2/sh2_SensorValue.c)
 
 
 # Explicitly add the include directory
