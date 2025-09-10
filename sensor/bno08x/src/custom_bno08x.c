@@ -25,15 +25,16 @@ sh2_SensorValue_t * _sensor_value = NULL;
 
 // Handle sensor events.
 static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
-  int rc;
+    int rc;
 
-//   LOG_DBG("Sensor Handler");
-  rc = sh2_decodeSensorEvent(_sensor_value, event);
-  if (rc != SH2_OK) {
-    LOG_DBG("BNO08x - Error decoding sensor event");
-    _sensor_value->timestamp = 0;
-    return;
-  }
+    //   LOG_DBG("Sensor Handler");
+    // printk("Sensor ID: %d Pointer: %p\n", event->reportId, event);
+    rc = sh2_decodeSensorEvent(_sensor_value, event);
+    if (rc != SH2_OK) {
+        LOG_DBG("BNO08x - Error decoding sensor event");
+        _sensor_value->timestamp = 0;
+        return;
+    }
 }
 
 static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)

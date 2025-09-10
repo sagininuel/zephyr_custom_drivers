@@ -630,12 +630,12 @@ static void rxAssemble(shtp_t *pShtp, uint8_t *in, uint16_t len, uint32_t t_us)
 
     // If whole payload received, deliver it to channel listener.
     if (pShtp->inRemaining == 0) {
-
         // Call callback if there is one.
         if (pShtp->chan[chan].callback != 0) {
             pShtp->chan[chan].callback(pShtp->chan[chan].cookie,
                                        pShtp->inPayload, pShtp->inCursor,
                                        pShtp->inTimestamp);
+            LOG_DBG("channel-> %s\n", pShtp->chan[chan].chanName);
         }
     }
 
@@ -813,10 +813,8 @@ void shtp_service(void *pInstance)
     shtp_t *pShtp = (shtp_t *)pInstance;
     uint32_t t_us = 0;
 
-    LOG_DBG("shtp_service .. pShtp->advertPhase: %d", pShtp->advertPhase);
     if (pShtp->advertPhase == ADVERT_NEEDED) {
         pShtp->advertPhase = ADVERT_REQUESTED;  // do this before send, to avoid recursion.
-        LOG_DBG("ADVERT_NEEDED ..");
         int status = shtp_send(pShtp, SHTP_CHAN_COMMAND, advertise, sizeof(advertise));
         if (status != SH2_OK) {
             // Oops, advert request failed.  Go back to needing one.

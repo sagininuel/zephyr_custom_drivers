@@ -544,18 +544,17 @@ static uint64_t touSTimestamp(uint32_t hostInt, int32_t referenceDelta, uint16_t
     return timestamp;
 }
 
+static sh2_SensorEvent_t event;
+
 static void sensorhubInputHdlr(sh2_t *pSh2, uint8_t *payload, uint16_t len, uint32_t timestamp)
 {
-    sh2_SensorEvent_t event;
     uint16_t cursor = 0;
-
-    uint32_t referenceDelta;
-
-    referenceDelta = 0;
+    uint32_t referenceDelta = 0;
+    uint8_t reportId = 0;
 
     while (cursor < len) {
         // Get next report id
-        uint8_t reportId = payload[cursor];
+        reportId = payload[cursor];
 
         // Determine report length
         uint8_t reportLen = getReportLen(pSh2, reportId);
@@ -588,6 +587,7 @@ static void sensorhubInputHdlr(sh2_t *pSh2, uint8_t *payload, uint16_t len, uint
                 memcpy(event.report, pReport, reportLen);
                 event.len = reportLen;
                 if (pSh2->sensorCallback != 0) {
+                    // printk("\n\nReport ID: %d ::: %d Pointer: %p\n", reportId, (&event)->reportId, &event);
                     pSh2->sensorCallback(pSh2->sensorCookie, &event);
                 }
             }

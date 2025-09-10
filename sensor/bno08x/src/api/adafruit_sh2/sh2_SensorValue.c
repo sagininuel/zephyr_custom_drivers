@@ -23,6 +23,9 @@
 #include "sh2_err.h"
 #include "sh2_util.h"
 
+#include <zephyr/sys/printk.h>
+
+
 #define SCALE_Q(n) (1.0f / (1 << n))
 
 const float scaleRadToDeg = 180.0 / 3.14159265358;
@@ -340,7 +343,8 @@ static int decodeGameRotationVector(sh2_SensorValue_t *value, const sh2_SensorEv
     value->un.gameRotationVector.j = read16(&event->report[6]) * SCALE_Q(14);
     value->un.gameRotationVector.k = read16(&event->report[8]) * SCALE_Q(14);
     value->un.gameRotationVector.real = read16(&event->report[10]) * SCALE_Q(14);
-
+    
+    // printk("\nDecode.. real: %lf\n", (double)value->un.gameRotationVector.real);
     return SH2_OK;
 }
 
