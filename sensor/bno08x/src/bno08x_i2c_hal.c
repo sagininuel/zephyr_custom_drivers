@@ -171,12 +171,14 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     
     // Optional: Log the received data for debugging
     // #if LOG_LEVEL >= LOG_LEVEL_DBG
-    LOG_DBG("Received packet data:");
-    for (int i = 0; i < packet_size; i++) {
-        printk("%02X ", (pBuffer - packet_size)[i]);
-        if (i % 16 == 15) printk("\n");
+    if (packet_size > 0){
+        LOG_DBG("Received packet data:");
+        for (int i = 0; i < packet_size; i++) {
+            printk("%02X ", (pBuffer - packet_size)[i]);
+            if (i % 16 == 15) printk("\n");
+        }
+        printk("\n");
     }
-    printk("\n");
     // #endif
     
     // Set timestamp if requested

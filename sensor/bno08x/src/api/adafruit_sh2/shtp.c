@@ -27,7 +27,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(SHTP, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(SHTP, LOG_LEVEL_INF);
 
 // ------------------------------------------------------------------------
 // Private types
@@ -278,6 +278,7 @@ static inline uint16_t min_u16(uint16_t a, uint16_t b)
 // Send a cargo as a sequence of transports
 static int txProcess(shtp_t *pShtp, uint8_t chan, const uint8_t* pData, uint32_t len)
 {
+    LOG_DBG("Tx Process..");
     int status = SH2_OK;
     
     bool continuation = false;
@@ -327,6 +328,7 @@ static int txProcess(shtp_t *pShtp, uint8_t chan, const uint8_t* pData, uint32_t
         // For the rest of this transmission, packets are continuations.
         continuation = true;
     }
+    LOG_DBG("Tx Process out..");
 
     return SH2_OK;
 }
@@ -424,6 +426,7 @@ static void callAdvertHandler(shtp_t *pShtp, uint32_t guid,
 
 static void processAdvertisement(shtp_t *pShtp, uint8_t *payload, uint16_t payloadLen)
 {
+    LOG_DBG("Process Advertisment..");
     uint16_t x;
     uint8_t tag;
     uint8_t len;
@@ -692,7 +695,7 @@ void *shtp_open(sh2_Hal_t *pHal)
     pShtp->advertPhase = ADVERT_REQUESTED;
 
     // Open HAL
-    LOG_DBG("OPENING HAL...");
+    LOG_DBG("OPENING HAL.. advertPhase: ADVERT_REQUESTED");
     pHal->open(pHal);
 
     return pShtp;
@@ -744,8 +747,10 @@ int shtp_listenAdvert(void *pInstance,
     // Register the advert listener
     addAdvertListener(pShtp, guid, advertCallback, cookie);
 
+    LOG_DBG("Advert listener.. %d", pShtp->advertPhase);
     // Arrange for a new set of advertisements, for this listener
     if (pShtp->advertPhase == ADVERT_IDLE) {
+        LOG_DBG("Setting ADVERT_NEEDED");
         pShtp->advertPhase = ADVERT_NEEDED;
     }
 
@@ -808,8 +813,10 @@ void shtp_service(void *pInstance)
     shtp_t *pShtp = (shtp_t *)pInstance;
     uint32_t t_us = 0;
 
+    LOG_DBG("shtp_service .. pShtp->advertPhase: %d", pShtp->advertPhase);
     if (pShtp->advertPhase == ADVERT_NEEDED) {
         pShtp->advertPhase = ADVERT_REQUESTED;  // do this before send, to avoid recursion.
+        LOG_DBG("ADVERT_NEEDED ..");
         int status = shtp_send(pShtp, SHTP_CHAN_COMMAND, advertise, sizeof(advertise));
         if (status != SH2_OK) {
             // Oops, advert request failed.  Go back to needing one.
@@ -818,6 +825,7 @@ void shtp_service(void *pInstance)
     }
 
     int len = pShtp->pHal->read(pShtp->pHal, pShtp->inTransfer, sizeof(pShtp->inTransfer), &t_us);
+    LOG_DBG("Read complete..");
     if (len) {
         rxAssemble(pShtp, pShtp->inTransfer, len, t_us);
     }

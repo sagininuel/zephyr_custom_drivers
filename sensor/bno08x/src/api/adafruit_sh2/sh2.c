@@ -37,7 +37,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(SH2, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(SH2, LOG_LEVEL_INF);
 
 // ------------------------------------------------------------------------
 // Private type definitions
@@ -492,6 +492,7 @@ static int opProcess(sh2_t *pSh2, const sh2_Op_t *pOp)
     }
 
     uint32_t now_us = start_us;
+    // LOG_INF("Timeout set to: %d",pOp->timeout_us);
     
     // While op not complete and not timed out.
     while ((pSh2->pOp != 0) &&
@@ -1753,6 +1754,7 @@ int sh2_open(sh2_Hal_t *pHal,
     while (((now_us - start_us) < ADVERT_TIMEOUT_US) &&
            (!pSh2->resetComplete))
     {
+        LOG_DBG("First shtp_service ..");
         shtp_service(pSh2->pShtp);
         now_us = pSh2->pHal->getTimeUs(pSh2->pHal);
     }

@@ -16,7 +16,7 @@
 
 #include <custom_bno08x.h>
 
-LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_DBG);
 
 
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
@@ -27,10 +27,11 @@ sh2_SensorValue_t * _sensor_value = NULL;
 static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
   int rc;
 
+//   LOG_DBG("Sensor Handler");
   rc = sh2_decodeSensorEvent(_sensor_value, event);
   if (rc != SH2_OK) {
     LOG_DBG("BNO08x - Error decoding sensor event");
-    // _sensor_value->timestamp = 0;
+    _sensor_value->timestamp = 0;
     return;
   }
 }
@@ -49,7 +50,7 @@ static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 //     return i2c_reg_write_byte_dt(&cfg->i2c, reg, data);
 // }
 
-static int _bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int bno08x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
     struct bno08x_data *data = dev->data;
     uint8_t accel_data[6];
@@ -74,21 +75,6 @@ static int _bno08x_sample_fetch(const struct device *dev, enum sensor_channel ch
     data->accel_z = (int16_t)((accel_data[5] << 8) | accel_data[4]);
 
     return 0;
-}
-
-static int bno08x_sample_fetch(sh2_SensorValue_t * value)
-{
-    _sensor_value = value;
-
-    value->timestamp = 0;
-    
-    sh2_service();
-
-    if(value->timestamp == 0 && value->sensorId != SH2_GYRO_INTEGRATED_RV){
-        return false;
-    }
-    
-    return true;
 }
 
 static int bno08x_channel_get(const struct device *dev,
@@ -118,6 +104,20 @@ static int bno08x_channel_get(const struct device *dev,
     return 0;
 }
 
+static int sample_fetch(const struct device * dev, bno08x_quaternion_data_t *data, sh2_SensorValue_t * value)
+{
+    _sensor_value = value;
+
+    value->timestamp = 0;
+    
+    sh2_service();
+
+    if(value->timestamp == 0 && value->sensorId != SH2_GYRO_INTEGRATED_RV){
+        return false;
+    }
+    return true;
+}
+
 static bool configure_reports_impl (const struct device * dev, sh2_SensorId_t sensorId, uint32_t interval_us)
 {
     LOG_DBG("Configure Reports!");
@@ -139,6 +139,7 @@ static bool configure_reports_impl (const struct device * dev, sh2_SensorId_t se
         return false;
     }
 
+    LOG_DBG("Configure Reports completed!");
     return true;
 }
 
@@ -149,6 +150,7 @@ static const struct sensor_driver_api bno08x_sensor_driver_api = {
 
 static const struct custom_driver_api bno08x_custom_driver_api = {
     .configure_reports = configure_reports_impl,
+    .read_quaternion = sample_fetch,
 };
 
 static int bno08x_init(const struct device *dev)
