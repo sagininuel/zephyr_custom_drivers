@@ -1,6 +1,10 @@
-// modules/include/drivers/bno08x.h
-#ifndef ZEPHYR_INCLUDE_DRIVERS_BNO08X_H_
-#define ZEPHYR_INCLUDE_DRIVERS_BNO08X_H_
+/**
+ * Copyright (c) 2025 Remantek Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ */
+
+#pragma once
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
@@ -49,21 +53,40 @@ struct bno08x_config {
     struct i2c_dt_spec i2c;
 };
 
-typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *);
-typedef bool (*bno08x_configure_reports_t)(const struct device *dev, sh2_SensorId_t sensorId, uint32_t interval_us);
 
 __subsystem struct custom_driver_api {
     sample_fetch_t fetch_sample_data;
     bno08x_configure_reports_t configure_reports;
 };
 
+/**
+ * @brief Function to call shtp_service() function under hood
+ * 
+ * @param[in] dev Pointer to device subsystem struct
+ * @param[out] sensor_value Pointer to sensor value buffer
+ * 
+ * @return  
+ */
+typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *);
+
 static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value)
 {
     const struct custom_driver_api *api = 
-        (const struct custom_driver_api *)dev->api;
+    (const struct custom_driver_api *)dev->api;
     
     return api->fetch_sample_data(dev, sensor_value);
 }
+
+/**
+ * @brief Function to configure desired reports from bno08x sensor
+ * 
+ * @param[in] dev Pointer to device subsystem struct
+ * @param[in] sensorId ID of streaming sensor data
+ * @param[in] interval_us Set streaming interval in microseconds
+ * 
+ * @return
+ */
+typedef bool (*bno08x_configure_reports_t)(const struct device *dev, sh2_SensorId_t sensorId, uint32_t interval_us);
 
 static inline bool bno08x_configure_reports(const struct device *dev, sh2_SensorId_t sensorId, uint32_t interval_us)
 {
@@ -77,5 +100,4 @@ static inline bool bno08x_configure_reports(const struct device *dev, sh2_Sensor
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_BNO08X_H_ */
 

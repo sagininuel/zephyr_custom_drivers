@@ -1,10 +1,14 @@
 /**
+ * Copyright (c) 2025 Remantek Inc.
  * SPDX-License-Identifier: Apache-2.0
  * 
  */
 
- #ifndef _CUSTOM_BNO08X_H
- #define _CUSTOM_BNO08X_H
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "sh2.h"
 #include "sh2_SensorValue.h"
@@ -28,4 +32,6 @@ typedef struct i2c_hal_s {
 
 void bno08x_i2c_hal_init(const struct i2c_dt_spec *i2c_dev, i2c_hal_t * pHal, bool isDefault);
 
- #endif
+#ifdef __cplusplus
+}
+#endif
