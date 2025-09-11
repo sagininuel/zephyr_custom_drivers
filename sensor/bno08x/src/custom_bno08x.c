@@ -16,25 +16,11 @@
 
 #include <custom_bno08x.h>
 
-LOG_MODULE_REGISTER(CUSTOM_BNO08X, LOG_LEVEL_DBG);
-
+LOG_MODULE_REGISTER(custom_bno08x, LOG_LEVEL_DBG);
 
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
 sh2_ProductIds_t prodIds; // Product IDs returned by sensor
 sh2_SensorValue_t * _sensor_value = NULL;
-
-// Handle sensor events.
-static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
-    int rc;
-
-    //   LOG_DBG("Sensor Handler");
-    rc = sh2_decodeSensorEvent(_sensor_value, event);
-    if (rc != SH2_OK) {
-        LOG_DBG("BNO08x - Error decoding sensor event");
-        _sensor_value->timestamp = 0;
-        return;
-    }
-}
 
 static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 {
@@ -104,7 +90,19 @@ static int bno08x_channel_get(const struct device *dev,
     return 0;
 }
 
-static int sample_fetch(const struct device * dev, bno08x_quaternion_data_t *data, sh2_SensorValue_t * value)
+static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
+    int rc;
+
+    //   LOG_DBG("Sensor Handler");
+    rc = sh2_decodeSensorEvent(_sensor_value, event);
+    if (rc != SH2_OK) {
+        LOG_DBG("BNO08x - Error decoding sensor event");
+        _sensor_value->timestamp = 0;
+        return;
+    }
+}
+
+static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t * value)
 {
     _sensor_value = value;
 
@@ -150,7 +148,7 @@ static const struct sensor_driver_api bno08x_sensor_driver_api = {
 
 static const struct custom_driver_api bno08x_custom_driver_api = {
     .configure_reports = configure_reports_impl,
-    .read_quaternion = sample_fetch,
+    .fetch_sample_data = fetch_sample_data_impl,
 };
 
 static int bno08x_init(const struct device *dev)
@@ -159,7 +157,6 @@ static int bno08x_init(const struct device *dev)
     struct bno08x_data *data = dev->data;
     data->custom_api = &bno08x_custom_driver_api;
 
-    // uint8_t chip_id;
     int ret;
 
     LOG_DBG("I2C peripheral BNO08X at address: 0x%02x", cfg->i2c.addr);
@@ -170,15 +167,13 @@ static int bno08x_init(const struct device *dev)
         return -ENODEV;
     }
     
-    // return 0; // Go to main application (for debug)
-    
     // Get a reference to _bno08x_hal
     i2c_hal_t * bno08x_hal = &_bno08x_hal;
 
-    // Initialize the hal operations
+    // Initialize hal operations
     bno08x_i2c_hal_init(&cfg->i2c, bno08x_hal, true);
 
-    // Reset hardware
+    // Hardware reset
     bno08x_hal->reset();
 
     // Open SH2 interface (also registers non-sensor event handler.)
@@ -188,8 +183,6 @@ static int bno08x_init(const struct device *dev)
     }
 
     LOG_DBG("Soft Reset complete..");
-
-    // return 0;
 
     // Check connection partially by getting the product id's
     memset(&prodIds, 0, sizeof(prodIds));
@@ -210,7 +203,7 @@ static int bno08x_init(const struct device *dev)
     // Register sensor listener
     sh2_setSensorCallback(sensorHandler, NULL);
 
-    LOG_INF("CUSTOM_BNO08X sensor initialized successfully");
+    LOG_INF("BNO08X initialized successfully");
     return 0;
 }
 

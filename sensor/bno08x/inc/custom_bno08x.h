@@ -49,20 +49,20 @@ struct bno08x_config {
     struct i2c_dt_spec i2c;
 };
 
-typedef int (*bno08x_read_quaternion_t)(const struct device *dev, bno08x_quaternion_data_t *data, sh2_SensorValue_t *);
+typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *);
 typedef bool (*bno08x_configure_reports_t)(const struct device *dev, sh2_SensorId_t sensorId, uint32_t interval_us);
 
 __subsystem struct custom_driver_api {
-    bno08x_read_quaternion_t read_quaternion;
+    sample_fetch_t fetch_sample_data;
     bno08x_configure_reports_t configure_reports;
 };
 
-static inline int bno08x_read_quaternion(const struct device *dev, bno08x_quaternion_data_t *data, sh2_SensorValue_t *sensor_value)
+static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value)
 {
     const struct custom_driver_api *api = 
         (const struct custom_driver_api *)dev->api;
     
-    return api->read_quaternion(dev, data, sensor_value);
+    return api->fetch_sample_data(dev, sensor_value);
 }
 
 static inline bool bno08x_configure_reports(const struct device *dev, sh2_SensorId_t sensorId, uint32_t interval_us)
