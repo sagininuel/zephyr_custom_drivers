@@ -544,7 +544,7 @@ static uint64_t touSTimestamp(uint32_t hostInt, int32_t referenceDelta, uint16_t
     return timestamp;
 }
 
-static sh2_SensorEvent_t event;
+sh2_SensorEvent_t event;
 
 static void sensorhubInputHdlr(sh2_t *pSh2, uint8_t *payload, uint16_t len, uint32_t timestamp)
 {

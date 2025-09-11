@@ -170,7 +170,7 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     }
     
     // Optional: Log the received data for debugging
-    // #if LOG_LEVEL >= LOG_LEVEL_DBG
+    #if LOG_LEVEL >= LOG_LEVEL_DBG
     if (packet_size > 0){
         LOG_DBG("Received packet data:");
         for (int i = 0; i < packet_size; i++) {
@@ -179,7 +179,7 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
         }
         printk("\n");
     }
-    // #endif
+    #endif
     
     // Set timestamp if requested
     if (t_us != NULL) {

@@ -344,7 +344,7 @@ static int decodeGameRotationVector(sh2_SensorValue_t *value, const sh2_SensorEv
     value->un.gameRotationVector.k = read16(&event->report[8]) * SCALE_Q(14);
     value->un.gameRotationVector.real = read16(&event->report[10]) * SCALE_Q(14);
     
-    // printk("\nDecode.. real: %lf\n", (double)value->un.gameRotationVector.real);
+    // printk("\nDecode.. 0x%02X :: real: %lf\n", read16(&event->report[10]), (double)value->un.gameRotationVector.real);
     return SH2_OK;
 }
 
