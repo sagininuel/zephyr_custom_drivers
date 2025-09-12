@@ -71,7 +71,7 @@ static int i2chal_open(sh2_Hal_t *self) {
 
     LOG_DBG("I2C HAL open");
       
-    // Check if I2C device is ready
+    /* Check if I2C device is ready */
     if (pHal_i2c == NULL || !i2c_is_ready_dt(pHal_i2c)) {
         LOG_ERR("I2C device not ready");
         return -ENODEV;
@@ -99,7 +99,7 @@ static int i2chal_open(sh2_Hal_t *self) {
 
 static void i2chal_close(sh2_Hal_t *self) {
     LOG_DBG("I2C HAL close");
-    // In Zephyr, typically no explicit close needed for I2C
+    /* In Zephyr, typically no explicit close needed for I2C */
 }
 
 static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
@@ -112,9 +112,9 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
         return 0;
     }
     
-    // Determine amount to read
+    /* Determine amount to read */
     uint16_t packet_size = (uint16_t)header[0] | (uint16_t)header[1] << 8;
-    // Unset the "continue" bit
+    /* Unset the "continue" bit */
     packet_size &= ~0x8000;
     
     LOG_DBG("Read SHTP header. Packet size: %u & buffer size: %u", 
@@ -122,12 +122,12 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     
     size_t i2c_buffer_max = i2c_get_max_buffer_size();
     if (packet_size > len) {
-        // packet wouldn't fit in our buffer
+        /* packet wouldn't fit in our buffer */
         LOG_ERR("Packet size %u exceeds buffer size %u", packet_size, len);
         return 0;
     }
     
-    // the number of non-header bytes to read
+    /* the number of non-header bytes to read */
     uint16_t cargo_remaining = packet_size;
     uint8_t i2c_buffer[i2c_buffer_max];
     uint16_t read_size;
@@ -150,26 +150,25 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
         }
         
         if (first_read) {
-            // The first time we're saving the "original" header, so include it in the
-            // cargo count
+            /* The first time we're saving the "original" header, so include it in the cargo count */
             cargo_read_amount = read_size;
             memcpy(pBuffer, i2c_buffer, cargo_read_amount);
             first_read = false;
         } else {
-            // this is not the first read, so copy from 4 bytes after the beginning of
-            // the i2c buffer to skip the header included with every new i2c read and
-            // don't include the header in the amount of cargo read
+            /*  this is not the first read, so copy from 4 bytes after the beginning of
+                the i2c buffer to skip the header included with every new i2c read and
+                don't include the header in the amount of cargo read */
             cargo_read_amount = read_size - 4;
             memcpy(pBuffer, i2c_buffer + 4, cargo_read_amount);
         }
         
-        // advance our pointer by the amount of cargo read
+        /* advance our pointer by the amount of cargo read */
         pBuffer += cargo_read_amount;
-        // mark the cargo as received
+        /* mark the cargo as received */
         cargo_remaining -= cargo_read_amount;
     }
     
-    // Optional: Log the received data for debugging
+    /* Optional: Log the received data for debugging */
     #if LOG_LEVEL >= LOG_LEVEL_DBG
     if (packet_size > 0){
         LOG_DBG("Received packet data:");
@@ -181,7 +180,7 @@ static int i2chal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
     }
     #endif
     
-    // Set timestamp if requested
+    /* Set timestamp if requested */
     if (t_us != NULL) {
         *t_us = k_uptime_get_32() * 1000; // Convert ms to us
     }
@@ -203,10 +202,10 @@ static int i2chal_write(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len)
         return 0;
     }
 
-    // Log packet for debugging
+    /* Log packet for debugging */
     LOG_HEXDUMP_DBG(pBuffer, MIN(len, 16), "TX Packet:");
 
-    // Use standard I2C write (no register address for BNO085)
+    /* Use standard I2C write (no register address for BNO08x sensor) */
     int ret = i2c_write_dt(pHal_i2c, pBuffer, len);
     if (ret != 0) {
         LOG_ERR("I2C write failed: %d", ret);
@@ -236,7 +235,7 @@ static uint8_t hardware_reset(void)
 
 static void event_callback(void *cookie, sh2_AsyncEvent_t * pEvent)
 {
- // If we see a reset, set a flag so that sensors will be reconfigured.
+  /* If we see a reset, set a flag so that sensors will be reconfigured. */
   if (pEvent->eventId == SH2_RESET) {
      _reset_occurred = true;
     }

@@ -823,8 +823,9 @@ void shtp_service(void *pInstance)
     }
 
     int len = pShtp->pHal->read(pShtp->pHal, pShtp->inTransfer, sizeof(pShtp->inTransfer), &t_us);
-    LOG_DBG("Read complete..");
     if (len) {
         rxAssemble(pShtp, pShtp->inTransfer, len, t_us);
     }
+    
+    LOG_DBG("Read complete..");
 }
