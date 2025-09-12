@@ -8,7 +8,7 @@ compatible: "custom,bno08x"
 include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
-  int-gpios:
+  interruptgpios:
     type: phandle-array
     description: |
       The INT pin defaults to active high when produced by the sensor.
