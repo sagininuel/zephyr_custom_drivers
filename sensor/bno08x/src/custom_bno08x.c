@@ -16,7 +16,7 @@
 
 #include <custom_bno08x.h>
 
-LOG_MODULE_REGISTER(custom_bno08x, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(custom_bno08x, LOG_LEVEL_INF);
 
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
 sh2_ProductIds_t prodIds; // Product IDs returned by sensor
@@ -109,11 +109,14 @@ static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t *
     value->timestamp = 0;
     
     sh2_service();
-
+    
     if(value->timestamp == 0 && value->sensorId != SH2_GYRO_INTEGRATED_RV){
-        return false;
+        LOG_DBG("Failed sample fetch! timestamp: %llu sensorid: %d", value->timestamp, value->sensorId);
+        return -1;
     }
-    return true;
+
+    LOG_DBG("Success sample fetch! timestamp: %llu sensorid: %d", value->timestamp, value->sensorId);
+    return 0;
 }
 
 static bool configure_reports_impl (const struct device * dev, sh2_SensorId_t sensorId, uint32_t interval_us)
@@ -134,11 +137,11 @@ static bool configure_reports_impl (const struct device * dev, sh2_SensorId_t se
     int status = sh2_setSensorConfig(sensorId, &config);
 
     if (status != SH2_OK) {
-        return false;
+        return -1;
     }
 
     LOG_DBG("Configure Reports completed!");
-    return true;
+    return 0;
 }
 
 static const struct sensor_driver_api bno08x_sensor_driver_api = {
@@ -167,16 +170,16 @@ static int bno08x_init(const struct device *dev)
         return -ENODEV;
     }
     
-    // Get a reference to _bno08x_hal
+    /* Get a reference to _bno08x_hal */
     i2c_hal_t * bno08x_hal = &_bno08x_hal;
 
-    // Initialize hal operations
+    /* Initialize hal operations */
     bno08x_i2c_hal_init(&cfg->i2c, bno08x_hal, true);
 
-    // Hardware reset
+    /* Hardware reset */
     bno08x_hal->reset();
 
-    // Open SH2 interface (also registers non-sensor event handler.)
+    /* Open SH2 interface (also registers non-sensor event handler.) */
     ret = sh2_open(&bno08x_hal->sh2_Hal, bno08x_hal->sh2_event_callback, NULL);
     if (ret != SH2_OK){
         return SH2_ERR;
@@ -184,7 +187,7 @@ static int bno08x_init(const struct device *dev)
 
     LOG_DBG("Soft Reset complete..");
 
-    // Check connection partially by getting the product id's
+    /* Check connection partially by getting the product id's */
     memset(&prodIds, 0, sizeof(prodIds));
     ret = sh2_getProdIds(&prodIds);
     if (ret != SH2_OK) {
@@ -200,7 +203,7 @@ static int bno08x_init(const struct device *dev)
         }
     }
 
-    // Register sensor listener
+    /* Register sensor listener */
     sh2_setSensorCallback(sensorHandler, NULL);
 
     LOG_INF("BNO08X initialized successfully");
