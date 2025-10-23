@@ -9,7 +9,6 @@ zephyr_library_sources(src/api/adafruit_sh2/shtp.c)
 zephyr_library_sources(src/api/adafruit_sh2/sh2_util.c)
 zephyr_library_sources(src/api/adafruit_sh2/sh2_SensorValue.c)
 
-
 # Explicitly add the include directory
 zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
 zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/api/adafruit_sh2)

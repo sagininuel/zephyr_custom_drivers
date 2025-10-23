@@ -102,87 +102,6 @@ static void i2c_hal_close(sh2_Hal_t *self) {
     /* In Zephyr, typically no explicit close needed for I2C */
 }
 
-// #include <zephyr/drivers/i2c.h>
-// #include <zephyr/sys/byteorder.h>
-
-#define MAX_SHTP_TRANSFER_SIZE 256
-#define SHTP_HEADER_SIZE 4
-
-static int i2c_hal_read_max_transfer(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
-                                    uint32_t *t_us)
-{
-    /* I2C Message Structure */
-    struct i2c_msg msg = {
-        .buf = pBuffer,
-        .len = MAX_SHTP_TRANSFER_SIZE,
-        .flags = I2C_MSG_READ | I2C_MSG_STOP
-    };
-
-    /* Define the message array (only one message in this case)*/
-    struct i2c_msg msgs[] = { msg };
-
-    /* Execute the single, continuous transfer -- Sequence: START, ADDR+R [MAX_SHTP_TRANSFER_SIZE data bytes], STOP */
-    
-    int ret = i2c_transfer_dt(pHal_i2c, msgs, ARRAY_SIZE(msgs));
-
-    if (ret < 0) {
-        printk("I2C read transfer failed (Error: %d)\n", ret);
-        return ret;
-    }
-
-    /**
-     * --- SHTP Protocol Parsing ---
-     * The first 4 bytes contain the SHTP header:
-     * Byte 0: Length LSB
-     * Byte 1: Length MSB (MSB is continuation bit)
-     * Byte 2: Channel
-     * Byte 3: Sequence Number
-     */
-
-    if (MAX_SHTP_TRANSFER_SIZE < SHTP_HEADER_SIZE) {
-        // Should not happen, but for safety
-        return -EINVAL;
-    }
-
-    /* Determine amount to read -- Little Endian */
-    uint16_t packet_size = (uint16_t)pBuffer[0] | (uint16_t)pBuffer[1] << 8;
-    /* Unset/Clear the "continue" bit */
-    packet_size &= ~0x8000;
-
-    /* Check for NULL Header */
-    if (packet_size == 0) {
-        printk("SHTP: Received null header (no cargo).\n");
-        return 0;
-    }
-
-    /* Validate the length against the buffer size */
-    if (packet_size > MAX_SHTP_TRANSFER_SIZE) {
-        return -EIO;
-    }
-
-    printk("SHTP Packet received: Total Length=%u, Payload Size=%u, Channel=0x%02x\n",
-           packet_size, packet_size - SHTP_HEADER_SIZE, pBuffer[2]);
-
-    /* Optional: Log the received data for debugging */
-    #if LOG_LEVEL >= LOG_LEVEL_DBG
-    if (packet_size > 0){
-        LOG_DBG("Received packet data:");
-        for (int i = 0; i < packet_size; i++) {
-            printk("%02X ", (pBuffer - packet_size)[i]);
-            if (i % 16 == 15) printk("\n");
-        }
-        printk("\n");
-    }
-    #endif
-
-    /* Set timestamp if requested */
-    if (t_us != NULL) {
-        *t_us = k_uptime_get_32() * 1000; // Convert ms to us
-    }
-
-    return (int)packet_size;
-}
-
 static int i2c_hal_read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len,
                        uint32_t *t_us) {
     LOG_DBG("I2C HAL read");
@@ -331,7 +250,8 @@ void bno08x_i2c_hal_init(const struct i2c_dt_spec * i2c_dev, i2c_hal_t * pHal, b
 
     pHal->sh2_Hal.open = i2c_hal_open;
     pHal->sh2_Hal.close = i2c_hal_close;
-    pHal->sh2_Hal.read = i2c_hal_read_max_transfer;
+    // pHal->sh2_Hal.read = i2c_hal_read_max_transfer;
+    pHal->sh2_Hal.read = i2c_hal_read;
     pHal->sh2_Hal.write = i2c_hal_write;
     pHal->sh2_Hal.getTimeUs = getTimeUs;
 
