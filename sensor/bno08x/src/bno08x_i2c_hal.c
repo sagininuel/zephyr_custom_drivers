@@ -1,5 +1,7 @@
 /**
  * Copyright (c) 2025 Remantek Inc.
+ * All Rights Reserved
+ * 
  * SPDX-License-Identifier: Apache-2.0
  * 
  */
