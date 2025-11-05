@@ -196,7 +196,7 @@ static int bno08x_init(const struct device *dev)
     }
     else{    
         for (int n = 0; n < prodIds.numEntries; n++) {
-            LOG_INF("Part %d : Version %d.%d.%d Build %d\n",
+            LOG_INF("Part %d : Version %d.%d.%d Build %d",
                 prodIds.entry[n].swPartNumber,
                 prodIds.entry[n].swVersionMajor, prodIds.entry[n].swVersionMinor,
                 prodIds.entry[n].swVersionPatch, prodIds.entry[n].swBuildNumber);
