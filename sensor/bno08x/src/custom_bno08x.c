@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(custom_bno08x, LOG_LEVEL_INF);
 i2c_hal_t _bno08x_hal; // Struct representing SH2 Hardware Abstraction Layer
 sh2_ProductIds_t prodIds; // Product IDs returned by sensor
 sh2_SensorValue_t * _sensor_value = NULL;
+raw_sensor_data_t * _raw_data = NULL;
 
 static int bno08x_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 {
@@ -93,6 +94,10 @@ static int bno08x_channel_get(const struct device *dev,
 static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
     int rc;
 
+    /* Get raw event with data and return */
+    _raw_data->event = event;
+    return;
+
     //   LOG_DBG("Sensor Handler");
     rc = sh2_decodeSensorEvent(_sensor_value, event);
     if (rc != SH2_OK) {
@@ -102,9 +107,10 @@ static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
     }
 }
 
-static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t * value)
+static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t * value, void * raw_data)
 {
     _sensor_value = value;
+    _raw_data = raw_data;
 
     value->timestamp = 0;
     

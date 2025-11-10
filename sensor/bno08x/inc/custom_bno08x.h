@@ -55,6 +55,10 @@ struct bno08x_config {
     struct i2c_dt_spec i2c;
 };
 
+typedef struct raw_sensor_data_s{
+    sh2_SensorEvent_t * event;
+}raw_sensor_data_t;
+
 /**
  * @brief Function to call shtp_service() function under hood
  * 
@@ -63,7 +67,7 @@ struct bno08x_config {
  * 
  * @return  
  */
-typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *);
+typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *, void *);
 
 /**
  * @brief Function to configure desired reports from bno08x sensor
@@ -89,12 +93,12 @@ static inline bool bno08x_configure_reports(const struct device *dev, sh2_Sensor
     return api->configure_reports(dev, sensorId, interval_us);
 }
 
-static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value)
+static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value, void * raw_data)
 {
     const struct custom_driver_api *api = 
     (const struct custom_driver_api *)dev->api;
     
-    return api->fetch_sample_data(dev, sensor_value);
+    return api->fetch_sample_data(dev, sensor_value, raw_data);
 }
 
 #ifdef __cplusplus
