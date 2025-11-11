@@ -107,7 +107,7 @@ static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
     }
 }
 
-static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t * value, void * raw_data)
+static int fetch_sample_data_impl(const struct device * dev, sh2_SensorValue_t * value, raw_sensor_data_t * raw_data)
 {
     _sensor_value = value;
     _raw_data = raw_data;

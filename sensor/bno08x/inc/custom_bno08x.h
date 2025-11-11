@@ -67,7 +67,7 @@ typedef struct raw_sensor_data_s{
  * 
  * @return  
  */
-typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *, void *);
+typedef int (*sample_fetch_t)(const struct device *dev, sh2_SensorValue_t *, raw_sensor_data_t *);
 
 /**
  * @brief Function to configure desired reports from bno08x sensor
@@ -93,7 +93,7 @@ static inline bool bno08x_configure_reports(const struct device *dev, sh2_Sensor
     return api->configure_reports(dev, sensorId, interval_us);
 }
 
-static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value, void * raw_data)
+static inline int sample_fetch(const struct device *dev, sh2_SensorValue_t *sensor_value, raw_sensor_data_t * raw_data)
 {
     const struct custom_driver_api *api = 
     (const struct custom_driver_api *)dev->api;
