@@ -96,7 +96,7 @@ static void sensorHandler(void *cookie, sh2_SensorEvent_t *event) {
 
     /* Get raw event with data and return */
     _raw_data->event = event;
-    return;
+    // return;
 
     //   LOG_DBG("Sensor Handler");
     rc = sh2_decodeSensorEvent(_sensor_value, event);

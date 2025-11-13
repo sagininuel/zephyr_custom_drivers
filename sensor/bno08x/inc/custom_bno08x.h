@@ -59,6 +59,8 @@ typedef struct raw_sensor_data_s{
     sh2_SensorEvent_t * event;
 }raw_sensor_data_t;
 
+void print_sh2_SensorEvent_bytes(const sh2_SensorEvent_t *event);
+
 /**
  * @brief Function to call shtp_service() function under hood
  * 
