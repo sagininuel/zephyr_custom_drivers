@@ -1,9 +1,6 @@
-/**
- * Copyright (c) 2025 Remantek Inc.
- * All Rights Reserved
- * 
+/*
+ * Author: Gini
  * SPDX-License-Identifier: Apache-2.0
- * 
  */
 
 #include <bno08x_platform.h>
