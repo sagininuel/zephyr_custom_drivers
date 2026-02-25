@@ -1,7 +1,5 @@
-/**
- * Copyright (c) 2025, Remantek Inc.
- * All rights reserved.
- * 
+/*
+ * Author: Gini
  * SPDX-License-Identifier: Apache-2.0
  */
 

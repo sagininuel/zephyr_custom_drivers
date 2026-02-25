@@ -1,7 +1,6 @@
-/**
- * Copyright (c) 2025 Remantek Inc.
+/*
+ * Author: Gini
  * SPDX-License-Identifier: Apache-2.0
- * 
  */
 
 #pragma once

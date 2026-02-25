@@ -1,3 +1,8 @@
+/*
+ * Author: Gini
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 // zephyr_custom_drivers/modules/sensor/vl53l0x.c
 #define DT_DRV_COMPAT custom_vl53l0x
 

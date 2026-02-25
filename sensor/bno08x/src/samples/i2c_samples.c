@@ -1,3 +1,8 @@
+/*
+ * Author: Gini
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/devicetree.h>

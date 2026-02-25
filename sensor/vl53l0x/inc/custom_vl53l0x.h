@@ -1,11 +1,7 @@
-/**
- * Copyright (c) 2025, Remantek Inc.
- * All rights reserved.
- * 
+/*
+ * Author: Gini
  * SPDX-License-Identifier: Apache-2.0
- * 
  */
-
 
 #ifndef ZEPHYR_CUSTOM_VL53L0X_H_
 #define ZEPHYR_CUSTOM_VL53L0X_H_

@@ -1,10 +1,9 @@
-/**
+/*
+ * Author: Gini
  * SPDX-License-Identifier: Apache-2.0
- * 
  */
 
-
- //Implementation of the BNO08X i2c Hardware Abstraction Layer
+//Implementation of the BNO08X i2c Hardware Abstraction Layer
 #include <bno08x_platform.h>
 
 // static const struct device *i2c_device;
